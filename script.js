@@ -1,10 +1,12 @@
 const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymHEXAcMO0nUgRLmcv0RXaIJEnzyDD7KeWLYegxgNJfHtrnsgMtMHfsjXMHLr7i7qFjg/exec'; // Ganti dengan Web App URL dari Google Apps Script
-const NUM_RELAYS = 5; // Harus sesuai dengan NUM_RELAYS di kode ESP32 Anda
+const NUM_RELAYS = 5; 
 
 document.addEventListener('DOMContentLoaded', () => {
     generateRelayButtons();
     fetchRelayStatus();
-    setInterval(fetchRelayStatus, 5000); // Perbarui status setiap 5 detik
+    fetchActivityLogs(); // Panggil saat awal
+    setInterval(fetchRelayStatus, 5000); 
+    setInterval(fetchActivityLogs, 10000); // Perbarui log setiap 10 detik
 });
 
 function generateRelayButtons() {
@@ -24,7 +26,6 @@ function generateRelayButtons() {
     }
 }
 
-// Fungsi placeholder untuk mendapatkan GPIO yang sesuai (sesuaikan dengan array relayGPIOs di ESP32)
 function getGpioForRelay(relayId) {
     const gpioMap = {
         1: 2,
@@ -41,16 +42,16 @@ async function setRelayState(relayId, status) {
     statusMessage.textContent = `Mengirim perintah untuk Relay ${relayId}...`;
     try {
         const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=updateRelay&relayId=${relayId}&status=${status}`, {
-            method: 'POST', // Gunakan POST untuk update
-            mode: 'no-cors' // Penting untuk menghindari masalah CORS di sisi browser
+            method: 'POST', 
+            mode: 'no-cors' 
         });
-        // Karena mode 'no-cors', respons tidak bisa dibaca.
-        // Kita harus mengasumsikan berhasil dan memicu pembaruan status.
         statusMessage.textContent = `Perintah untuk Relay ${relayId} (${status}) berhasil dikirim. Memperbarui status...`;
-        fetchRelayStatus(); // Perbarui status setelah mengirim perintah
+        fetchRelayStatus(); 
+        fetchActivityLogs(); // Perbarui log setelah mengirim perintah
     } catch (error) {
         console.error('Error sending command:', error);
         statusMessage.textContent = `Gagal mengirim perintah untuk Relay ${relayId}. Error: ${error.message}`;
+        fetchActivityLogs(); // Perbarui log juga jika ada error pengiriman
     }
 }
 
@@ -60,7 +61,7 @@ async function fetchRelayStatus() {
             method: 'GET'
         });
         const data = await response.json();
-
+        
         for (const relayId in data) {
             const status = data[relayId];
             const statusIndicator = document.getElementById(`status-${relayId}`);
@@ -79,3 +80,30 @@ async function fetchRelayStatus() {
         document.getElementById('status-message').textContent = `Gagal mengambil status relay. Error: ${error.message}`;
     }
 }
+
+// !!! FUNGSI BARU: Mengambil dan menampilkan log !!!
+async function fetchActivityLogs() {
+    const logBox = document.getElementById('activity-log');
+    try {
+        // Minta 15 log terbaru
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs&count=15`, {
+            method: 'GET'
+        });
+        const logs = await response.json();
+
+        logBox.innerHTML = ''; // Kosongkan log yang ada
+        if (logs.length === 0) {
+            logBox.innerHTML = '<p>No activity logs found.</p>';
+        } else {
+            logs.forEach(log => {
+                const p = document.createElement('p');
+                p.textContent = log;
+                logBox.appendChild(p);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching activity logs:', error);
+        logBox.innerHTML = `<p style="color: red;">Failed to load logs: ${error.message}</p>`;
+    }
+}
+// !!! AKHIR FUNGSI BARU !!!
