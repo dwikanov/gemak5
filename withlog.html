@@ -58,15 +58,6 @@
     <div class="container mx-auto p-4 bg-white rounded-xl shadow-lg">
         <h1 class="text-3xl sm:text-4xl font-bold text-center mb-8 text-gray-800">Sistem Kontrol Relay Multi-ESP32</h1>
 
-        <!-- Input untuk URL Google Apps Script -->
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
-            <label for="scriptUrlInput" class="block text-lg font-medium text-blue-800 mb-2">URL Google Apps Script:</label>
-            <input type="text" id="scriptUrlInput" placeholder="Tempel URL Web App Google Apps Script Anda di sini"
-                   class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-                   value="https://script.google.com/macros/s/AKfycbykVfj6C5tG4uKaGiGTK_676L_vw3u5q9xM5WTBjctR7t31dz-H5uPnFclfj_OkSqia/exec"> <!-- GANTI DENGAN URL ANDA -->
-            <p class="text-sm text-blue-600 mt-2">Pastikan URL ini adalah URL Web App yang Anda dapatkan setelah deploy Google Apps Script.</p>
-        </div>
-
         <!-- Area Status Relay -->
         <div id="relayStatusContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             <!-- Konten status relay akan dimuat di sini oleh JavaScript -->
@@ -87,17 +78,8 @@
     </div>
 
     <script>
-        // Ambil URL Google Apps Script dari input atau gunakan default
-        const scriptUrlInput = document.getElementById('scriptUrlInput');
-        let SCRIPT_WEB_APP_URL = scriptUrlInput.value;
-
-        // Perbarui URL saat input berubah
-        scriptUrlInput.addEventListener('change', () => {
-            SCRIPT_WEB_APP_URL = scriptUrlInput.value;
-            console.log("URL Apps Script diperbarui:", SCRIPT_WEB_APP_URL);
-            fetchRelayStatus(); // Muat ulang status dengan URL baru
-            fetchActivityLogs(); // Muat ulang log dengan URL baru
-        });
+        // URL Google Apps Script yang baru, di-hardcode di sini.
+        const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbykVfj6C5tG4uKaGiGTK_676L_vw3u5q9x5WTBjctR7t31dz-H5uPnFclfj_OkSqia/exec"; 
 
         const relayStatusContainer = document.getElementById('relayStatusContainer');
         const activityLogsContainer = document.getElementById('activityLogs');
@@ -106,10 +88,6 @@
          * Mengambil status semua relay dari Google Sheet melalui Google Apps Script.
          */
         async function fetchRelayStatus() {
-            if (!SCRIPT_WEB_APP_URL) {
-                relayStatusContainer.innerHTML = '<p class="text-red-500 text-center col-span-full">Harap masukkan URL Google Apps Script Anda.</p>';
-                return;
-            }
             relayStatusContainer.innerHTML = `
                 <div class="relay-card p-6 flex flex-col items-center justify-center text-gray-500 col-span-full">
                     <p class="text-lg">Memuat status relay...</p>
@@ -176,11 +154,6 @@
          * @param {Event} event Objek peristiwa klik tombol.
          */
         async function toggleRelay(event) {
-            if (!SCRIPT_WEB_APP_URL) {
-                alert("Harap masukkan URL Google Apps Script Anda terlebih dahulu.");
-                return;
-            }
-
             const button = event.target;
             const esp32Id = button.dataset.esp32Id;
             const relayId = button.dataset.relayId;
@@ -246,10 +219,6 @@
          * Mengambil log aktivitas terbaru dari Google Sheet.
          */
         async function fetchActivityLogs() {
-            if (!SCRIPT_WEB_APP_URL) {
-                activityLogsContainer.innerHTML = '<p class="text-red-500 text-center">Harap masukkan URL Google Apps Script Anda.</p>';
-                return;
-            }
             activityLogsContainer.innerHTML = '<p class="text-gray-500 text-center">Memuat log aktivitas...</p>';
             try {
                 const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs&limit=20`); // Ambil 20 log terbaru
