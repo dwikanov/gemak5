@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     generateRelayButtons();
     fetchRelayStatus();
     fetchActivityLogs(); // Panggil saat awal
-    setInterval(fetchRelayStatus, 5000); 
-    setInterval(fetchActivityLogs, 10000); // Perbarui log setiap 10 detik
+    setInterval(fetchRelayStatus, 100); 
+    setInterval(fetchActivityLogs, 100); // Perbarui log setiap 10 detik
 });
 
 function generateRelayButtons() {
@@ -57,9 +57,7 @@ async function setRelayState(relayId, status) {
 
 async function fetchRelayStatus() {
     try {
-        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getRelayStatus`, {
-            method: 'GET'
-        });
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getRelayStatus`);
         const data = await response.json();
         
         for (const relayId in data) {
@@ -86,9 +84,7 @@ async function fetchActivityLogs() {
     const logBox = document.getElementById('activity-log');
     try {
         // Minta 15 log terbaru
-        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs&count=15`, {
-            method: 'GET'
-        });
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs&count=15`);
         const logs = await response.json();
 
         logBox.innerHTML = ''; // Kosongkan log yang ada
