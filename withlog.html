@@ -123,7 +123,312 @@
 
     <script>
         // GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA YANG SUDAH DIDEPLOY
-        const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxyp5e0W24AbYP4Revm9_k_SFlh5cWrd8OSBvPWC1kdnXHwNWvWU96MHIw2x15sisho/exec"; 
+        const SCRIPT_WEB_APP_URL = "<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengendali Relay ESP32</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px; /* Tambahkan padding agar tidak terlalu mepet */
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%; /* Ubah menjadi 100% agar responsif */
+            text-align: center;
+        }
+        .relay-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .relay-status {
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            min-width: 60px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .status-on {
+            background-color: #d1fae5; /* green-100 */
+            color: #065f46; /* green-800 */
+        }
+        .status-off {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+        }
+        .toggle-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .toggle-btn:active {
+            transform: translateY(1px);
+        }
+        .btn-on {
+            background-color: #10b981; /* green-500 */
+            color: white;
+        }
+        .btn-on:hover {
+            background-color: #059669; /* green-600 */
+        }
+        .btn-off {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+        .btn-off:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        .message-box {
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #374151;
+            text-align: left;
+        }
+        .system-status {
+            background-color: #e0f2f7; /* light blue */
+            border: 1px solid #a7d9ed;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .discrepancy-indicator {
+            font-size: 0.75rem;
+            color: #f59e0b; /* amber-500 */
+            margin-left: 0.5rem;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-6">Pengendali Relay ESP32</h1>
+        <p class="text-gray-600 mb-8">Kontrol status relay Anda dan lihat log aktivitas.</p>
+
+        <div class="system-status" id="system-status-box">
+            <p>Status Sistem:</p>
+            <p id="esp32-heartbeat">ESP32 Last Seen: Memuat...</p>
+        </div>
+
+        <div id="relay-list">
+            </div>
+
+        <div class="message-box" id="message-box">
+            <p>Status: Memuat...</p>
+        </div>
+    </div>
+
+    <script>
+        // GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA YANG SUDAH DIDEPLOY
+        const SCRIPT_WEB_APP_URL = "GANTI_DENGAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI"; 
+        const NUM_RELAYS = 5; // Sesuaikan dengan jumlah relay di kode ESP32 Anda
+
+        const relayListDiv = document.getElementById('relay-list');
+        const messageBox = document.getElementById('message-box');
+        const esp32HeartbeatElem = document.getElementById('esp32-heartbeat');
+
+        /**
+         * Menampilkan pesan di kotak pesan UI.
+         * @param {string} message Pesan yang akan ditampilkan.
+         * @param {boolean} isError Apakah pesan adalah error.
+         */
+        function showMessage(message, isError = false) {
+            messageBox.innerHTML = `<p>${message}</p>`;
+            messageBox.style.borderColor = isError ? '#ef4444' : '#d1d5db';
+            messageBox.style.color = isError ? '#991b1b' : '#374151';
+        }
+
+        /**
+         * Mengambil status sistem dari Google Apps Script (mis. heartbeat ESP32).
+         */
+        async function fetchSystemStatus() {
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getSystemStatus`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.lastEsp32Heartbeat) {
+                    const lastTime = new Date(data.lastEsp32Heartbeat);
+                    const now = new Date();
+                    const diffMinutes = Math.round((now - lastTime) / (1000 * 60));
+
+                    let timeAgo = '';
+                    if (diffMinutes < 1) {
+                        timeAgo = 'Baru saja';
+                    } else if (diffMinutes < 60) {
+                        timeAgo = `${diffMinutes} menit yang lalu`;
+                    } else if (diffMinutes < 1440) { // Kurang dari 24 jam
+                        timeAgo = `${Math.round(diffMinutes / 60)} jam yang lalu`;
+                    } else {
+                        timeAgo = `${Math.round(diffMinutes / 1440)} hari yang lalu`;
+                    }
+                    esp32HeartbeatElem.textContent = `ESP32 Last Seen: ${timeAgo} (${lastTime.toLocaleString()})`;
+                    esp32HeartbeatElem.style.color = diffMinutes < 10 ? 'green' : (diffMinutes < 60 ? 'orange' : 'red');
+                } else {
+                    esp32HeartbeatElem.textContent = 'ESP32 Last Seen: Tidak ada data / Offline';
+                    esp30HeartbeatElem.style.color = 'red';
+                }
+
+            } catch (error) {
+                console.error("Error fetching system status:", error);
+                esp32HeartbeatElem.textContent = `ESP32 Last Seen: Gagal memuat (${error.message})`;
+                esp32HeartbeatElem.style.color = 'red';
+            }
+        }
+
+        /**
+         * Mengambil status relay dari Google Apps Script dan memperbarui UI.
+         */
+        async function fetchRelayStatus() {
+            showMessage("Mengambil status relay...");
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getRelayStatus`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updateRelayUI(data);
+                showMessage("Status relay berhasil diperbarui.");
+            } catch (error) {
+                console.error("Error fetching relay status:", error);
+                showMessage(`Gagal mengambil status relay: ${error.message}`, true);
+            }
+        }
+
+        /**
+         * Memperbarui antarmuka pengguna berdasarkan data status relay yang diterima.
+         * @param {Object} relayData Objek berisi status relay (misalnya {"1": {"status":"ON", "lastUpdated":"...", "initiator":"..."}}).
+         */
+        function updateRelayUI(relayData) {
+            relayListDiv.innerHTML = ''; 
+            for (let i = 1; i <= NUM_RELAYS; i++) {
+                const relayId = String(i);
+                const relayInfo = relayData[relayId];
+                const status = relayInfo ? relayInfo.status : 'UNKNOWN'; 
+                const initiator = relayInfo ? relayInfo.initiator : '';
+
+                // Cek discrepancy
+                let discrepancyMessage = '';
+                if (initiator === 'Web Interface') {
+                    // Jika terakhir diubah oleh Web, kemungkinan ESP32 belum sync
+                    discrepancyMessage = ' (Menunggu sinkronisasi ESP32)';
+                    if (status === 'UNKNOWN') discrepancyMessage = ' (Status tidak diketahui)';
+                } else if (status === 'UNKNOWN') {
+                    discrepancyMessage = ' (Status tidak diketahui)';
+                } else if (initiator === 'ESP32 (Sync)' || initiator === 'ESP32') {
+                    // Jika terakhir diubah oleh ESP32 (Sync), berarti sesuai
+                    discrepancyMessage = ''; 
+                }
+
+                const relayCard = document.createElement('div');
+                relayCard.className = 'relay-card';
+                relayCard.innerHTML = `
+                    <span class="text-lg font-semibold text-gray-800">
+                        Relay ${relayId}
+                        <span class="discrepancy-indicator">${discrepancyMessage}</span>
+                    </span>
+                    <span id="status-${relayId}" class="relay-status ${status === 'ON' ? 'status-on' : 'status-off'}">${status}</span>
+                    <div>
+                        <button class="toggle-btn btn-on mr-2" data-relay-id="${relayId}" data-status="ON">ON</button>
+                        <button class="toggle-btn btn-off" data-relay-id="${relayId}" data-status="OFF">OFF</button>
+                    </div>
+                `;
+                relayListDiv.appendChild(relayCard);
+            }
+
+            document.querySelectorAll('.toggle-btn').forEach(button => {
+                button.addEventListener('click', handleToggleRelay);
+            });
+        }
+
+        /**
+         * Mengirim perintah toggle relay ke Google Apps Script.
+         * @param {Event} event Objek event dari klik tombol.
+         */
+        async function handleToggleRelay(event) {
+            const button = event.target;
+            const relayId = button.dataset.relayId;
+            const newStatus = button.dataset.status;
+
+            showMessage(`Mengirim perintah untuk Relay ${relayId} ke ${newStatus}...`);
+
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.disabled = true);
+
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=updateRelayStatus&relayId=${relayId}&status=${newStatus}&initiator=WebInterface`, {
+                    method: 'POST', 
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.text(); 
+                console.log(result);
+                showMessage(`Relay ${relayId} berhasil diatur ke ${newStatus}.`);
+
+                // Perbarui status di UI secara langsung untuk respons yang lebih cepat
+                const statusSpan = document.getElementById(`status-${relayId}`);
+                if (statusSpan) {
+                    statusSpan.textContent = newStatus;
+                    statusSpan.className = `relay-status ${newStatus === 'ON' ? 'status-on' : 'status-off'}`;
+                    // Update juga indikator discrepancy
+                    const discrepancySpan = statusSpan.parentElement.querySelector('.discrepancy-indicator');
+                    if (discrepancySpan) {
+                        discrepancySpan.textContent = ' (Menunggu sinkronisasi ESP32)';
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error toggling relay:", error);
+                showMessage(`Gagal mengatur Relay ${relayId}: ${error.message}`, true);
+            } finally {
+                document.querySelectorAll('.toggle-btn').forEach(btn => btn.disabled = false);
+            }
+        }
+
+        // Ambil status saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRelayStatus();
+            fetchSystemStatus();
+        });
+
+        // Perbarui status setiap 5 detik (sesuaikan dengan updateInterval ESP32)
+        setInterval(fetchRelayStatus, 5000); 
+        setInterval(fetchSystemStatus, 10000); // Heartbeat lebih jarang (mis. setiap 10 detik)
+    </script>
+</body>
+</html>"; 
         const NUM_RELAYS = 5; // Sesuaikan dengan jumlah relay di kode ESP32 Anda
 
         const relayListDiv = document.getElementById('relay-list');
