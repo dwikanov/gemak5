@@ -79,3 +79,27 @@ button {
     font-size: 0.9em;
     color: #666;
 }
+/* ... Kode CSS yang sudah ada ... */
+
+.log-section {
+    margin-top: 40px;
+    text-align: left;
+}
+.log-box {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 15px;
+    max-height: 250px; /* Batasi tinggi log box */
+    overflow-y: auto; /* Aktifkan scroll jika log terlalu banyak */
+    border-radius: 8px;
+    font-size: 0.85em;
+    line-height: 1.6;
+}
+.log-box p {
+    margin: 0 0 5px 0;
+    padding-bottom: 3px;
+    border-bottom: 1px dashed #eee;
+}
+.log-box p:last-child {
+    border-bottom: none;
+}
