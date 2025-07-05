@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kontrol Relay Multi-ESP32</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Menggunakan font Inter */
@@ -58,20 +57,16 @@
     <div class="container mx-auto p-4 bg-white rounded-xl shadow-lg">
         <h1 class="text-3xl sm:text-4xl font-bold text-center mb-8 text-gray-800">Sistem Kontrol Relay Multi-ESP32</h1>
 
-        <!-- Area Status Relay -->
         <div id="relayStatusContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <!-- Konten status relay akan dimuat di sini oleh JavaScript -->
             <div class="relay-card p-6 flex flex-col items-center justify-center text-gray-500">
                 <p class="text-lg">Memuat status relay...</p>
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mt-4"></div>
             </div>
         </div>
 
-        <!-- Area Log Aktivitas -->
         <div class="bg-gray-50 p-6 rounded-xl shadow-lg">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Log Aktivitas Terbaru</h2>
             <div id="activityLogs" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                <!-- Log aktivitas akan dimuat di sini oleh JavaScript -->
                 <p class="text-gray-500 text-center">Memuat log aktivitas...</p>
             </div>
         </div>
