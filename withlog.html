@@ -1,359 +1,355 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kontrol Relay Multi-ESP32</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Menggunakan font Inter */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Warna latar belakang yang lembut */
-            color: #334155; /* Warna teks gelap */
-            min-height: 100vh; /* Pastikan body mengambil tinggi penuh viewport */
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Mengatur item dari atas */
-            padding: 2rem; /* Padding global */
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            max-width: 1200px; /* Lebar maksimum yang lebih besar */
-            width: 100%;
-            text-align: center;
-        }
-        .relay-card {
-            background-color: #f9fafb; /* Warna card lebih terang */
-            border: 1px solid #e5e7eb;
-            border-radius: 1rem; /* Sudut lebih membulat */
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Bayangan lebih halus */
-            transition: transform 0.2s ease-in-out;
-        }
-        .relay-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        }
-        .relay-button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem; /* Lebih membulat dari sebelumnya */
-            font-weight: 600;
-            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            width: 100%; /* Tombol memenuhi lebar card */
-            margin-top: 0.5rem; /* Jarak antar tombol dan teks */
-        }
-        .relay-button.on {
-            background-color: #10b981; /* Hijau untuk ON */
-            color: white;
-        }
-        .relay-button.off {
-            background-color: #ef4444; /* Merah untuk OFF */
-            color: white;
-        }
-        .relay-button.pending {
-            background-color: #f59e0b; /* Kuning untuk pending */
-            color: white;
-        }
-        .relay-button:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .log-entry {
-            background-color: #ffffff;
-            border-left: 4px solid #3b82f6; /* Garis biru untuk log */
-            border-radius: 8px;
-            padding: 0.75rem 1rem; /* Padding lebih kecil untuk log */
-        }
-        /* Spinner */
-        .loading-spinner {
-            border-top-color: #3b82f6;
-            border-right-color: #3b82f6;
-            border-bottom-color: #3b82f6;
-            border-left-color: #a7c8f0; /* Warna lebih lembut untuk bagian yang tidak berputar */
-            border-width: 3px;
-            height: 2.5rem;
-            width: 2.5rem;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    </style>
+  <base target="_top">
+  <title>Kontrol Relay Multi-ESP32</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    .relay-card {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .relay-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+    }
+    .status-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #ef4444; /* Red for OFF */
+      transition: background-color 0.3s ease-in-out;
+    }
+    .status-indicator.on {
+      background-color: #22c55e; /* Green for ON */
+    }
+    .log-entry {
+      padding: 8px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .log-timestamp {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .log-text {
+      font-size: 0.95rem;
+      color: #374151;
+    }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      font-size: 1.2rem;
+      color: #3b82f6;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (min-width: 640px) {
+      .relay-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-8 text-gray-800">Sistem Kontrol Relay Multi-ESP32</h1>
-        <p class="text-gray-600 mb-8">Pantau dan kendalikan relay dari berbagai perangkat ESP32 Anda.</p>
 
-        <div id="relayStatusContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <div class="relay-card p-6 flex flex-col items-center justify-center text-gray-500 col-span-full">
-                <p class="text-lg">Memuat status relay...</p>
-                <div class="loading-spinner rounded-full mt-4"></div>
-            </div>
-        </div>
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <span>Memuat...</span>
+  </div>
 
-        <div class="bg-gray-50 p-6 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-left">Log Aktivitas Terbaru</h2>
-            <div id="activityLogs" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                <p class="text-gray-500 text-center">Memuat log aktivitas...</p>
-            </div>
-        </div>
+  <div class="container">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-4">Kontrol Relay Multi-ESP32</h1>
+
+    <!-- Device Selection -->
+    <div class="bg-blue-50 p-5 rounded-lg border border-blue-200">
+      <label for="deviceSelect" class="block text-lg font-medium text-gray-700 mb-2">Pilih Perangkat ESP32:</label>
+      <select id="deviceSelect" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+        <!-- Options will be populated by JavaScript -->
+      </select>
     </div>
 
-    <script>
-        // URL Google Apps Script Anda yang sudah dideploy
-        const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbykVfj6C5tG4uKaGiGTK_676L_vw3u5q9xM5WTBjctR7t31dz-H5uPnFclfj_OkSqia/exec"; 
+    <!-- Relay Control Section -->
+    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Status & Kontrol Relay</h2>
+      <div id="relayStatusContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 relay-grid">
+        <!-- Relay cards will be inserted here by JavaScript -->
+      </div>
+    </div>
 
-        const relayStatusContainer = document.getElementById('relayStatusContainer');
-        const activityLogsContainer = document.getElementById('activityLogs');
+    <!-- Activity Log Section -->
+    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Log Aktivitas</h2>
+      <div id="activityLogContainer" class="bg-white p-4 rounded-md border border-gray-300 max-h-96 overflow-y-auto text-sm">
+        <p class="text-gray-500 text-center" id="noLogsMessage">Tidak ada log untuk ditampilkan.</p>
+        <!-- Logs will be inserted here by JavaScript -->
+      </div>
+      <button id="refreshLogsBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 ease-in-out">
+        Segarkan Log
+      </button>
+    </div>
 
-        /**
-         * Mengambil status semua relay dari Google Sheet melalui Google Apps Script.
-         */
-        async function fetchRelayStatus() {
-            // Tampilkan loading state hanya jika container kosong atau belum ada data
-            if (relayStatusContainer.children.length === 0 || relayStatusContainer.children[0].classList.contains('col-span-full')) {
-                relayStatusContainer.innerHTML = `
-                    <div class="relay-card p-6 flex flex-col items-center justify-center text-gray-500 col-span-full">
-                        <p class="text-lg">Memuat status relay...</p>
-                        <div class="loading-spinner rounded-full mt-4"></div>
-                    </div>
-                `;
-            }
+    <!-- Message Box -->
+    <div id="messageBox" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+      <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
+        <p id="messageText" class="text-lg font-medium text-gray-800 mb-4"></p>
+        <button id="closeMessageBox" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 ease-in-out">
+          OK
+        </button>
+      </div>
+    </div>
 
-            try {
-                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getRelayStatus`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("Status Relay Diterima:", data);
-                renderRelayStatus(data);
-            } catch (error) {
-                console.error("Gagal mengambil status relay:", error);
-                relayStatusContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Gagal memuat status relay: ${error.message}. Pastikan URL benar dan Apps Script sudah di-deploy.</p>`;
-            }
-        }
+  </div>
 
-        /**
-         * Merender status relay ke dalam DOM.
-         * @param {Object} data Objek yang berisi status relay untuk setiap ESP32.
-         */
-        function renderRelayStatus(data) {
-            // Buat elemen baru untuk merender, lalu ganti konten lama
-            const newRelayCards = document.createElement('div');
-            newRelayCards.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'; // Sesuaikan dengan layout container
+  <script>
+    // URL Web App Google Apps Script Anda (akan diisi oleh Apps Script saat deploy)
+    const SCRIPT_WEB_APP_URL = "<?= ScriptApp.get='https://script.google.com/macros/s/AKfycbykVfj6C5tG4uKaGiGTK_676L_vw3u5q9xM5WTBjctR7t31dz-H5uPnFclfj_OkSqia/exec'; ?>"; // Ini akan diganti oleh Apps Script saat deployment
 
-            if (Object.keys(data).length === 0) {
-                newRelayCards.innerHTML = '<p class="text-gray-500 text-center col-span-full">Tidak ada data ESP32 atau relay yang ditemukan di Spreadsheet.</p>';
-            } else {
-                for (const esp32Id in data) {
-                    const esp32Relays = data[esp32Id];
-                    const esp32Card = document.createElement('div');
-                    esp32Card.className = 'relay-card p-6 flex flex-col'; // Tambah flex-col untuk layout internal card
-                    
-                    // Sorting relayId agar tampil berurutan
-                    const sortedRelayIds = Object.keys(esp32Relays).sort((a, b) => {
-                        // Mengambil angka dari "RELAYx" untuk sorting numerik
-                        const numA = parseInt(a.replace('RELAY', ''));
-                        const numB = parseInt(b.replace('RELAY', ''));
-                        return numA - numB;
-                    });
+    const deviceSelect = document.getElementById('deviceSelect');
+    const relayStatusContainer = document.getElementById('relayStatusContainer');
+    const activityLogContainer = document.getElementById('activityLogContainer');
+    const noLogsMessage = document.getElementById('noLogsMessage');
+    const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const messageBox = document.getElementById('messageBox');
+    const messageText = document.getElementById('messageText');
+    const closeMessageBox = document.getElementById('closeMessageBox');
 
-                    esp32Card.innerHTML = `
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">${esp32Id}</h3>
-                        <div class="flex-grow grid grid-cols-2 gap-3"> ${sortedRelayIds.map(relayId => `
-                                <div class="flex flex-col items-center p-2 bg-gray-100 rounded-md">
-                                    <span class="text-sm font-medium text-gray-700 mb-1">${relayId}</span>
-                                    <button id="${esp32Id}-${relayId}"
-                                            class="relay-button text-sm ${esp32Relays[relayId] === 'ON' ? 'on' : 'off'}"
-                                            data-esp32-id="${esp32Id}"
-                                            data-relay-id="${relayId}"
-                                            data-status="${esp32Relays[relayId]}">
-                                        ${esp32Relays[relayId]}
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                    newRelayCards.appendChild(esp32Card);
-                }
-            }
-            // Ganti konten lama dengan yang baru
-            relayStatusContainer.innerHTML = '';
-            relayStatusContainer.appendChild(newRelayCards);
+    let selectedDeviceId = '';
+    let pollingInterval;
 
-            // Tambahkan event listener untuk tombol relay (setelah elemen baru ditambahkan)
-            document.querySelectorAll('.relay-button').forEach(button => {
-                button.addEventListener('click', toggleRelay);
-            });
-        }
+    // Daftar Device ID yang diharapkan (sesuaikan dengan yang Anda gunakan di ESP32)
+    const deviceIds = ["ESP32_A", "ESP32_B"]; // Tambahkan lebih banyak jika Anda memiliki lebih banyak perangkat
 
-        /**
-         * Mengirim permintaan untuk mengubah status relay.
-         * @param {Event} event Objek peristiwa klik tombol.
-         */
-        async function toggleRelay(event) {
-            const button = event.target;
-            const esp32Id = button.dataset.esp32Id;
-            const relayId = button.dataset.relayId;
-            const currentStatus = button.dataset.status;
-            const newStatus = currentStatus === 'ON' ? 'OFF' : 'ON';
+    // Fungsi untuk menampilkan/menyembunyikan loading overlay
+    function showLoading() {
+      loadingOverlay.classList.remove('hidden');
+    }
 
-            // Nonaktifkan tombol yang diklik dan ubah tampilannya menjadi pending
-            button.disabled = true;
-            button.classList.remove('on', 'off');
-            button.classList.add('pending');
-            button.textContent = 'Mengubah...';
+    function hideLoading() {
+      loadingOverlay.classList.add('hidden');
+    }
 
-            try {
-                const params = new URLSearchParams({
-                    action: 'updateRelayStatus',
-                    esp32Id: esp32Id,
-                    relayId: relayId,
-                    status: newStatus,
-                    initiator: 'Web Interface'
-                });
+    // Fungsi untuk menampilkan pesan kustom
+    function showMessage(message) {
+      messageText.textContent = message;
+      messageBox.classList.remove('hidden');
+    }
 
-                const response = await fetch(SCRIPT_WEB_APP_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
+    // Event listener untuk menutup message box
+    closeMessageBox.addEventListener('click', () => {
+      messageBox.classList.add('hidden');
+    });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json(); // Asumsikan Apps Script mengembalikan JSON
+    // Mengisi dropdown pilihan perangkat
+    function populateDeviceSelect() {
+      deviceSelect.innerHTML = '';
+      deviceIds.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        deviceSelect.appendChild(option);
+      });
+      // Atur perangkat pertama sebagai default
+      selectedDeviceId = deviceIds[0];
+      deviceSelect.value = selectedDeviceId;
+    }
 
-                if (data.success) {
-                    // Perbarui status tombol di UI
-                    button.dataset.status = newStatus;
-                    button.classList.remove('pending');
-                    button.classList.add(newStatus.toLowerCase());
-                    button.textContent = newStatus;
-                    fetchActivityLogs(); // Muat ulang log setelah perubahan berhasil
-                } else {
-                    alert(`Gagal mengubah status relay: ${data.message || 'Respons tidak berhasil.'}`);
-                    // Kembalikan tombol ke status semula jika gagal
-                    button.classList.remove('pending');
-                    button.classList.add(currentStatus.toLowerCase());
-                    button.textContent = currentStatus;
-                }
-            } catch (error) {
-                console.error("Gagal mengirim permintaan update relay:", error);
-                alert(`Terjadi kesalahan saat mengubah status relay: ${error.message}`);
-                // Kembalikan tombol ke status semula jika terjadi error
-                button.classList.remove('pending');
-                button.classList.add(currentStatus.toLowerCase());
-                button.textContent = currentStatus;
-            } finally {
-                button.disabled = false; // Aktifkan kembali tombol
-            }
-        }
+    // Fungsi untuk mengambil status relay dari Google Apps Script
+    async function getRelayStatus() {
+      if (!selectedDeviceId) return;
 
-        /**
-         * Mengambil log aktivitas terbaru dari Google Sheet.
-         */
-        async function fetchActivityLogs() {
-            // Tampilkan loading state hanya jika container kosong
-            if (activityLogsContainer.children.length === 0 || activityLogsContainer.children[0].textContent.includes('Memuat log')) {
-                activityLogsContainer.innerHTML = '<p class="text-gray-500 text-center">Memuat log aktivitas...</p>';
-            }
+      try {
+        // showLoading(); // Hanya tampilkan loading jika ini adalah fetch awal atau ada interaksi
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getRelayStatus&deviceId=${selectedDeviceId}`);
+        const data = await response.json();
+        updateRelayUI(data);
+      } catch (error) {
+        console.error('Error fetching relay status:', error);
+        showMessage('Gagal mengambil status relay. Periksa koneksi atau skrip.');
+      } finally {
+        // hideLoading();
+      }
+    }
 
-            try {
-                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs&limit=20`); // Ambil 20 log terbaru
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("Log Aktivitas Diterima:", data);
-                renderActivityLogs(data);
-            } catch (error) {
-                console.error("Gagal mengambil log aktivitas:", error);
-                activityLogsContainer.innerHTML = `<p class="text-red-500 text-center">Gagal memuat log aktivitas: ${error.message}</p>`;
-            }
-        }
+    // Fungsi untuk memperbarui UI berdasarkan status relay
+    function updateRelayUI(statusData) {
+      relayStatusContainer.innerHTML = ''; // Bersihkan konten sebelumnya
+      for (let i = 1; i <= 5; i++) {
+        const relayId = i.toString();
+        const status = statusData[relayId] || 'OFF'; // Default OFF jika tidak ada data
 
-        /**
-         * Merender log aktivitas ke dalam DOM.
-         * @param {Array} logs Array objek log.
-         */
-        function renderActivityLogs(logs) {
-            activityLogsContainer.innerHTML = ''; // Bersihkan konten sebelumnya
-            if (logs.length === 0) {
-                activityLogsContainer.innerHTML = '<p class="text-gray-500 text-center">Tidak ada log aktivitas.</p>';
-                return;
-            }
+        const relayCard = document.createElement('div');
+        relayCard.className = `relay-card ${status === 'ON' ? 'border-green-400' : 'border-red-400'}`;
+        relayCard.innerHTML = `
+          <h3 class="text-xl font-semibold text-gray-700">Relay ${relayId}</h3>
+          <div class="status-indicator ${status === 'ON' ? 'on' : ''}" id="status-${relayId}"></div>
+          <p class="text-gray-600">Status: <span class="font-medium text-${status === 'ON' ? 'green' : 'red'}-600" id="text-status-${relayId}">${status}</span></p>
+          <button data-relay-id="${relayId}" data-current-status="${status}" class="toggle-btn w-full py-2 px-4 rounded-md shadow-md font-bold transition duration-200 ease-in-out
+            ${status === 'ON' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}">
+            ${status === 'ON' ? 'MATIKAN' : 'HIDUPKAN'}
+          </button>
+        `;
+        relayStatusContainer.appendChild(relayCard);
+      }
+      addToggleEventListeners(); // Tambahkan event listener setelah elemen dibuat
+    }
 
-            logs.forEach(log => {
-                const logEntry = document.createElement('div');
-                logEntry.className = 'log-entry p-3 rounded-lg shadow-sm flex items-start space-x-3';
-                
-                let icon = '';
-                let iconColor = 'text-gray-500';
-
-                // Logika ikon dan warna yang lebih rapi
-                if (log.action && typeof log.action === 'string') { // Pastikan log.action adalah string
-                    if (log.action.includes('ON')) {
-                        icon = '✅'; 
-                        iconColor = 'text-green-600';
-                    } else if (log.action.includes('OFF')) {
-                        icon = '❌'; 
-                        iconColor = 'text-red-600';
-                    } else if (log.action.includes('Connected')) {
-                        icon = '🌐'; 
-                        iconColor = 'text-blue-600';
-                    } else if (log.action.includes('Failed')) {
-                        icon = '⚠️'; 
-                        iconColor = 'text-yellow-600';
-                    } else if (log.action.includes('Booted')) {
-                        icon = '🚀'; 
-                        iconColor = 'text-purple-600';
-                    } else {
-                        icon = '📝'; 
-                        iconColor = 'text-gray-500';
-                    }
-                } else {
-                    icon = '📝'; // Default jika action tidak valid
-                    iconColor = 'text-gray-500';
-                }
-
-                const timestamp = new Date(log.timestamp).toLocaleString('id-ID', {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-
-                logEntry.innerHTML = `
-                    <div class="text-2xl ${iconColor}">${icon}</div>
-                    <div class="flex-1">
-                        <p class="text-sm text-gray-500">${timestamp}</p>
-                        <p class="text-base text-gray-700">
-                            <span class="font-semibold">${log.esp32Id || 'N/A'}</span> - ${log.relayId || 'N/A'}: <span class="font-bold">${log.action || 'Unknown Action'}</span> (oleh ${log.initiator || 'Unknown Initiator'})
-                        </p>
-                    </div>
-                `;
-                activityLogsContainer.appendChild(logEntry);
-            });
-        }
-
-        // Muat status relay dan log saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchRelayStatus();
-            fetchActivityLogs();
-
-            // Atur interval untuk memperbarui status relay dan log secara berkala
-            setInterval(fetchRelayStatus, 10000); // Setiap 10 detik
-            setInterval(fetchActivityLogs, 5000);  // Setiap 5 detik
+    // Fungsi untuk mengirim perintah toggle ke Google Apps Script
+    async function toggleRelay(relayId, currentStatus) {
+      const newStatus = currentStatus === 'ON' ? 'OFF' : 'ON';
+      showLoading();
+      try {
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=updateRelayStatus&deviceId=${selectedDeviceId}&relayId=${relayId}&status=${newStatus}`, {
+          method: 'POST'
         });
-    </script>
+        const result = await response.text();
+        console.log(result);
+        showMessage(result); // Tampilkan pesan dari Apps Script
+        getRelayStatus(); // Perbarui UI setelah perubahan
+      } catch (error) {
+        console.error('Error toggling relay:', error);
+        showMessage('Gagal mengubah status relay. Periksa koneksi atau skrip.');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Menambahkan event listener ke tombol toggle
+    function addToggleEventListeners() {
+      document.querySelectorAll('.toggle-btn').forEach(button => {
+        button.onclick = () => {
+          const relayId = button.dataset.relayId;
+          const currentStatus = button.dataset.currentStatus;
+          toggleRelay(relayId, currentStatus);
+        };
+      });
+    }
+
+    // Fungsi untuk mengambil log aktivitas
+    async function getLogs() {
+      showLoading();
+      try {
+        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getLogs`);
+        const logs = await response.json();
+        displayLogs(logs);
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+        showMessage('Gagal mengambil log aktivitas.');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Fungsi untuk menampilkan log aktivitas
+    function displayLogs(logs) {
+      activityLogContainer.innerHTML = '';
+      if (logs.length === 0) {
+        noLogsMessage.classList.remove('hidden');
+      } else {
+        noLogsMessage.classList.add('hidden');
+        // Filter log berdasarkan selectedDeviceId jika ada
+        const filteredLogs = logs.filter(log => log.deviceId === selectedDeviceId);
+
+        if (filteredLogs.length === 0) {
+          noLogsMessage.classList.remove('hidden');
+          noLogsMessage.textContent = `Tidak ada log untuk perangkat ${selectedDeviceId}.`;
+          return;
+        } else {
+          noLogsMessage.classList.add('hidden');
+        }
+
+        // Urutkan log dari yang terbaru ke terlama
+        filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        filteredLogs.forEach(log => {
+          const logEntry = document.createElement('div');
+          logEntry.className = 'log-entry';
+          const timestamp = new Date(log.timestamp).toLocaleString();
+          logEntry.innerHTML = `
+            <p class="log-timestamp">${timestamp}</p>
+            <p class="log-text"><strong>[${log.deviceId}] Relay ${log.relayId}:</strong> ${log.action} (oleh: ${log.initiator})</p>
+          `;
+          activityLogContainer.appendChild(logEntry);
+        });
+      }
+    }
+
+    // Event listener untuk perubahan pilihan perangkat
+    deviceSelect.addEventListener('change', (event) => {
+      selectedDeviceId = event.target.value;
+      console.log('Selected Device ID:', selectedDeviceId);
+      // Hentikan polling sebelumnya dan mulai yang baru
+      clearInterval(pollingInterval);
+      startPolling();
+      getLogs(); // Segarkan log saat perangkat berubah
+    });
+
+    // Event listener untuk tombol segarkan log
+    refreshLogsBtn.addEventListener('click', getLogs);
+
+    // Fungsi untuk memulai polling status relay
+    function startPolling() {
+      getRelayStatus(); // Ambil status segera setelah pemilihan perangkat
+      pollingInterval = setInterval(getRelayStatus, 3000); // Polling setiap 3 detik
+    }
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+      populateDeviceSelect();
+      startPolling(); // Mulai polling untuk perangkat default
+      getLogs(); // Ambil log awal
+    });
+  </script>
 </body>
 </html>
