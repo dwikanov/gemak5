@@ -3,36 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <title>Dashboard Kandang</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body{font-family:Arial;background:#f6f6f6;margin:0;padding:20px}
-  h1{text-align:center}
-  .box{background:#fff;border-radius:12px;padding:15px;max-width:500px;margin:20px auto}
-  button{padding:10px 16px;border:none;border-radius:8px;color:#fff;background:#1976d2;margin:5px}
-  button.on{background:#2e7d32}
-  .status{font-weight:bold}
+body{
+  font-family:Arial, sans-serif;
+  background:#f4f6f8;
+  margin:0;
+  padding:20px;
+}
+h1,h2{text-align:center}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:15px;
+  margin:10px auto;
+  max-width:500px;
+  cursor:pointer;
+}
+.status{
+  font-weight:bold;
+}
+.online{color:green}
+.offline{color:red}
+button{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  margin:5px;
+  color:#fff;
+  background:#1976d2;
+}
+button.on{background:#2e7d32}
+.hidden{display:none}
+.center{text-align:center}
 </style>
 </head>
+
 <body>
 
-<h1>Kandang 1</h1>
-
-<div class="box">
-  <p>Status ESP32: <span id="espStatus" class="status">-</span></p>
-  <p>Last seen: <span id="lastSeen">-</span></p>
+<!-- ================= HALAMAN UTAMA ================= -->
+<div id="home">
+  <h1>Dashboard Kandang</h1>
+  <div id="kandangList"></div>
 </div>
 
-<div class="box">
-  <button onclick="toggle('lampu1')" id="lampu1">Lampu 1</button>
-  <button onclick="toggle('lampu2')" id="lampu2">Lampu 2</button>
-  <button onclick="toggle('lampu3')" id="lampu3">Lampu 3</button>
-  <button onclick="toggle('kipas')"  id="kipas">Kipas</button>
+<!-- ================= DETAIL KANDANG ================= -->
+<div id="detail" class="hidden">
+  <h2 id="detailTitle"></h2>
+  <p class="center">
+    Status: <span id="detailStatus" class="status">-</span><br>
+    Last seen: <span id="detailLast">-</span>
+  </p>
+
+  <div class="center">
+    <button id="lampu1">Lampu 1</button>
+    <button id="lampu2">Lampu 2</button><br>
+    <button id="lampu3">Lampu 3</button>
+    <button id="kipas">Kipas</button>
+  </div>
+
+  <div class="center">
+    <br>
+    <button onclick="backHome()">← Kembali</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <script>
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain: "switch-lamp-3c346.firebaseapp.com",
@@ -40,42 +81,79 @@ const firebaseConfig = {
   projectId: "switch-lamp-3c346",
   appId: "1:375935971674:web:1f95dcf367151a9d7cc363"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const BASE = "/devices/kandang1";
 
-/* ================= RELAY ================= */
-function toggle(dev){
-  const ref = db.ref(BASE + "/" + dev);
-  ref.get().then(s => ref.set(!s.val()));
+/* ================= DATA ================= */
+const kandangs = ["kandang1","kandang2","kandang3","kandang4"];
+let currentKandang = null;
+
+/* ================= HALAMAN UTAMA ================= */
+const list = document.getElementById("kandangList");
+
+kandangs.forEach(k=>{
+  const card = document.createElement("div");
+  card.className="card";
+  card.innerHTML = `<h3>${k.toUpperCase()}</h3>
+    Status: <span class="status">-</span>`;
+  const statusEl = card.querySelector(".status");
+
+  db.ref(`/devices/${k}/status`).on("value", snap=>{
+    const s = snap.val();
+    if(!s || !s.last_seen) return;
+
+    const offline = (Date.now() - s.last_seen) > 5000;
+    statusEl.innerText = offline ? "OFFLINE" : "ONLINE";
+    statusEl.className = "status " + (offline ? "offline" : "online");
+  });
+
+  card.onclick = ()=> openDetail(k);
+  list.appendChild(card);
+});
+
+/* ================= DETAIL ================= */
+function openDetail(k){
+  currentKandang = k;
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("detail").classList.remove("hidden");
+
+  document.getElementById("detailTitle").innerText = k.toUpperCase();
+
+  const base = `/devices/${k}`;
+
+  // status
+  db.ref(base + "/status").on("value", snap=>{
+    const s = snap.val();
+    if(!s || !s.last_seen) return;
+
+    const offline = (Date.now() - s.last_seen) > 5000;
+    document.getElementById("detailStatus").innerText =
+      offline ? "OFFLINE" : "ONLINE";
+    document.getElementById("detailStatus").className =
+      "status " + (offline ? "offline" : "online");
+
+    document.getElementById("detailLast").innerText =
+      new Date(s.last_seen).toLocaleString("id-ID");
+  });
+
+  ["lampu1","lampu2","lampu3","kipas"].forEach(d=>{
+    const btn = document.getElementById(d);
+    const ref = db.ref(base + "/" + d);
+
+    ref.on("value", snap=>{
+      btn.className = snap.val() ? "on" : "";
+    });
+
+    btn.onclick = ()=> {
+      ref.get().then(s=> ref.set(!s.val()));
+    };
+  });
 }
 
-["lampu1","lampu2","lampu3","kipas"].forEach(d=>{
-  const ref = db.ref(BASE + "/" + d);
-  const btn = document.getElementById(d);
-
-  ref.on("value", snap=>{
-    const v = snap.val();
-    btn.className = v ? "on" : "";
-  });
-});
-
-/* ================= STATUS ================= */
-db.ref(BASE + "/status").on("value", snap=>{
-  const s = snap.val();
-  if (!s || !s.last_seen) return;
-
-  const now = Date.now();
-  const diff = now - s.last_seen;
-
-  const online = diff <= 5000; // 5 detik
-  document.getElementById("espStatus").innerText =
-    online ? "ONLINE" : "OFFLINE";
-
-  document.getElementById("lastSeen").innerText =
-    new Date(s.last_seen).toLocaleString("id-ID");
-});
+function backHome(){
+  document.getElementById("detail").classList.add("hidden");
+  document.getElementById("home").classList.remove("hidden");
+}
 </script>
 
 </body>
