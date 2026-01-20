@@ -1,112 +1,75 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>ESP32 Relay Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body{
-      font-family: Arial, sans-serif; text-align:center; background:#f6f6f6; margin:0; padding:20px;
-    }
-    h1{margin:20px 0}
-    .wrap{max-width:960px;margin:auto}
-    .card{
-      display:inline-block; width:220px; background:#fff; margin:10px; padding:18px;
-      border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,.1)
-    }
-    .card h2{margin:8px 0}
-    .status{font-weight:bold}
-    button{
-      width:90%; padding:10px; border:none; border-radius:10px; color:#fff;
-      background:#1976d2; font-size:16px; cursor:pointer
-    }
-    button.on{background:#2e7d32}
-    #allOff{background:#d32f2f; margin-top:20px}
-    footer{color:#777;margin-top:30px;font-size:.9rem}
-  </style>
+<meta charset="UTF-8">
+<title>Dashboard Kandang</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:Arial;background:#f6f6f6;margin:0;padding:20px}
+  h1{text-align:center}
+  .kandang{background:#fff;border-radius:12px;padding:15px;margin:15px auto;max-width:900px}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  .card{flex:1 1 200px;background:#fafafa;border-radius:10px;padding:10px;text-align:center}
+  button{padding:8px 14px;border:none;border-radius:8px;color:#fff;background:#1976d2}
+  button.on{background:#2e7d32}
+</style>
 </head>
 <body>
-  <h1>ESP32 Relay Control</h1>
-  <div class="wrap" id="dashboard" style="display:none">
-    <div class="card">
-      <h2>Relay 1</h2>
-      <div>Status: <span id="s1" class="status">...</span></div><br>
-      <button id="b1">Toggle</button>
-    </div>
-    <div class="card">
-      <h2>Relay 2</h2>
-      <div>Status: <span id="s2" class="status">...</span></div><br>
-      <button id="b2">Toggle</button>
-    </div>
-    <div class="card">
-      <h2>Relay 3</h2>
-      <div>Status: <span id="s3" class="status">...</span></div><br>
-      <button id="b3">Toggle</button>
-    </div>
-    <div class="card">
-      <h2>Relay 4</h2>
-      <div>Status: <span id="s4" class="status">...</span></div><br>
-      <button id="b4">Toggle</button>
-    </div>
-    <br>
-    <button id="allOff">ALL OFF</button>
-  </div>
 
-  <footer>Dashboard IoT ESP32</footer>
+<h1>Dashboard Kandang</h1>
+<div id="app"></div>
 
-  <!-- Firebase compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
-  <script>
-    // ===== Firebase Config =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
-      authDomain: "switch-lamp-3c346.firebaseapp.com",
-      databaseURL: "https://switch-lamp-3c346-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "switch-lamp-3c346",
-      appId: "1:375935971674:web:1f95dcf367151a9d7cc363"
-    };
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
+  authDomain: "switch-lamp-3c346.firebaseapp.com",
+  databaseURL: "https://switch-lamp-3c346-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "switch-lamp-3c346",
+  appId: "1:375935971674:web:1f95dcf367151a9d7cc363"
+};
+firebase.initializeApp(firebaseConfig);
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+firebase.auth().signInAnonymously().then(start);
 
-    // ===== AUTO ANONYMOUS LOGIN =====
-    auth.signInAnonymously()
-      .then(() => {
-        document.getElementById("dashboard").style.display = "block";
-        start();
-      })
-      .catch(err => alert("Anon auth gagal: " + err.message));
+const kandangs = ["kandang1","kandang2","kandang3","kandang4"];
+const devices  = ["lampu1","lampu2","lampu3","kipas"];
 
-    function start(){
-      const relays = [
-        {id:1, path:"relay1"},
-        {id:2, path:"relay2"},
-        {id:3, path:"relay3"},
-        {id:4, path:"relay4"}
-      ];
+function start(){
+  const app = document.getElementById("app");
+  const db  = firebase.database();
 
-      relays.forEach(r=>{
-        const s = document.getElementById("s"+r.id);
-        const b = document.getElementById("b"+r.id);
-        const ref = db.ref("/"+r.path);
+  kandangs.forEach(k=>{
+    const box = document.createElement("div");
+    box.className = "kandang";
+    box.innerHTML = `<h2>${k.toUpperCase()}</h2><div class="row"></div>`;
+    const row = box.querySelector(".row");
 
-        ref.on("value", snap=>{
-          const v = !!snap.val();
-          s.textContent = v ? "ON" : "OFF";
-          b.className = v ? "on" : "";
-        });
+    devices.forEach(d=>{
+      const card = document.createElement("div");
+      card.className="card";
+      card.innerHTML = `<b>${d}</b><br><span>...</span><br><br><button>Toggle</button>`;
+      const span = card.querySelector("span");
+      const btn  = card.querySelector("button");
 
-        b.onclick = ()=> ref.get().then(sn=> ref.set(!sn.val()));
+      const ref = db.ref(`/devices/${k}/${d}`);
+
+      ref.on("value", snap=>{
+        const v = !!snap.val();
+        span.textContent = v ? "ON" : "OFF";
+        btn.className = v ? "on" : "";
       });
 
-      document.getElementById("allOff").onclick = ()=>{
-        relays.forEach(r=> db.ref("/"+r.path).set(false));
-      };
-    }
-  </script>
+      btn.onclick = ()=> ref.get().then(s=> ref.set(!s.val()));
+      row.appendChild(card);
+    });
+
+    app.appendChild(box);
+  });
+}
+</script>
 </body>
 </html>
