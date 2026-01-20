@@ -23,29 +23,28 @@ tailwind.config = {
 </script>
 
 <style>
+body {
+  background:
+    radial-gradient(circle at top, rgba(220,38,38,.08), transparent 40%),
+    #0B0B0F;
+}
 .fade { animation: fade .4s ease; }
 @keyframes fade {
   from { opacity:0; transform:translateY(10px); }
   to { opacity:1; transform:none; }
 }
-.card-hover {
-  transition: all .3s ease;
-}
-.card-hover:hover {
-  transform: translateY(-6px) scale(1.02);
-}
-.glow {
-  box-shadow: 0 0 18px rgba(220,38,38,.6);
-}
+.card-hover { transition: all .3s ease; }
+.card-hover:hover { transform: translateY(-6px) scale(1.02); }
+.glow { box-shadow: 0 0 18px rgba(220,38,38,.6); }
 </style>
 </head>
 
-<body class="bg-bg text-white min-h-screen">
+<body class="text-white min-h-screen">
 
 <!-- ================= LOGIN ================= -->
 <section id="loginPage" class="min-h-screen flex items-center justify-center fade">
 
-  <div class="w-full max-w-md bg-card p-8 rounded-3xl shadow-2xl">
+  <div class="w-full max-w-md bg-card p-8 rounded-3xl shadow-2xl border border-white/10">
     <h1 class="text-3xl font-bold mb-6 text-center">Smart Kandang</h1>
 
     <form id="loginForm" class="space-y-4">
@@ -57,10 +56,11 @@ tailwind.config = {
 
       <label class="flex items-center gap-2 text-sm text-muted">
         <input type="checkbox" id="remember" class="accent-primary">
-        Tetap login
+        Tetap Login
       </label>
 
-      <button class="w-full bg-primary hover:bg-red-700 glow p-3 rounded-xl font-semibold transition">
+      <button
+        class="w-full bg-primary hover:bg-red-700 glow p-3 rounded-xl font-semibold transition">
         Masuk
       </button>
     </form>
@@ -73,36 +73,72 @@ tailwind.config = {
 <!-- ================= DASHBOARD ================= -->
 <section id="dashboardPage" class="hidden fade">
 
-  <main class="p-6 max-w-5xl mx-auto">
+  <main class="p-4 md:p-8 flex justify-center">
 
-    <!-- ========== OVERVIEW ========== -->
-    <section id="overviewView">
-      <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+    <!-- APP CONTAINER -->
+    <div class="
+      w-full max-w-5xl
+      bg-card/80 backdrop-blur
+      rounded-3xl
+      shadow-2xl
+      border border-white/10
+      p-6 md:p-8
+    ">
 
-      <div id="overviewGrid"
-        class="grid grid-cols-2 gap-6">
-      </div>
-    </section>
-
-    <!-- ========== DETAIL ========== -->
-    <section id="detailView" class="hidden">
-
-      <div class="flex items-center justify-between mb-6">
-        <button id="backBtn" class="text-xl text-muted">←</button>
-        <h2 id="detailTitle" class="text-2xl font-bold">Kandang</h2>
-        <span id="detailStatus" class="w-3 h-3 rounded-full"></span>
+      <!-- HEADER -->
+      <div class="mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold">Dashboard</h2>
+        <p class="text-sm text-muted">Smart Kandang Control Panel</p>
       </div>
 
-      <div id="lampGrid" class="grid grid-cols-2 gap-4 mb-6">
-      </div>
+      <!-- ================= OVERVIEW ================= -->
+      <section id="overviewView">
+        <div id="overviewGrid"
+          class="grid grid-cols-2 gap-4 md:gap-6">
+        </div>
+      </section>
 
-      <button id="kipasBtn"
-        class="w-full p-4 rounded-xl bg-primary/20 transition font-semibold">
-        🌀 Kipas
-      </button>
+      <!-- ================= DETAIL ================= -->
+      <section id="detailView" class="hidden fade">
 
-    </section>
+        <div class="
+          bg-bg/60
+          border border-white/10
+          rounded-2xl
+          p-6
+        ">
 
+          <div class="flex items-center justify-between mb-6">
+            <button id="backBtn"
+              class="text-muted hover:text-white transition">
+              ← Kembali
+            </button>
+
+            <h3 id="detailTitle"
+              class="text-xl md:text-2xl font-bold">
+              Kandang
+            </h3>
+
+            <span id="detailStatus"
+              class="w-3 h-3 rounded-full">
+            </span>
+          </div>
+
+          <!-- LAMPU -->
+          <div id="lampGrid"
+            class="grid grid-cols-2 gap-4 mb-6">
+          </div>
+
+          <!-- KIPAS -->
+          <button id="kipasBtn"
+            class="w-full p-4 rounded-xl font-semibold transition">
+            🌀 Kipas
+          </button>
+
+        </div>
+      </section>
+
+    </div>
   </main>
 </section>
 
@@ -115,10 +151,8 @@ import {
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
 import {
   getDatabase,
   ref,
@@ -126,7 +160,7 @@ import {
   update
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* === FIREBASE CONFIG (punyamu) === */
+/* === CONFIG === */
 const firebaseConfig = {
   apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain: "switch-lamp-3c346.firebaseapp.com",
@@ -184,13 +218,16 @@ function showLogin() {
 }
 
 /* ================= REALTIME ================= */
-const devicesRef = ref(db, 'devices');
-
-onValue(devicesRef, snap => {
-  deviceCache = snap.val();
+onValue(ref(db, 'devices'), snap => {
+  deviceCache = snap.val() || {};
   renderOverview();
   if (selectedDevice) renderDetail();
 });
+
+/* ================= HELPERS ================= */
+function formatKandang(id) {
+  return id.replace('kandang', 'Kandang ');
+}
 
 /* ================= OVERVIEW ================= */
 function renderOverview() {
@@ -203,13 +240,13 @@ function renderOverview() {
 
     overviewGrid.innerHTML += `
       <div onclick="openDetail('${id}')"
-        class="bg-card p-6 rounded-2xl card-hover cursor-pointer relative">
+        class="bg-bg/60 border border-white/10
+        p-6 rounded-2xl card-hover cursor-pointer relative">
 
         <span class="absolute top-4 right-4 w-3 h-3 rounded-full
-          ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}">
-        </span>
+          ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}"></span>
 
-        <h3 class="font-semibold capitalize">${id}</h3>
+        <h3 class="text-lg font-semibold">${formatKandang(id)}</h3>
       </div>
     `;
   });
@@ -227,7 +264,7 @@ function renderDetail() {
   const d = deviceCache[selectedDevice];
   if (!d) return;
 
-  detailTitle.textContent = selectedDevice;
+  detailTitle.textContent = formatKandang(selectedDevice);
 
   const online =
     d.status?.online &&
@@ -237,26 +274,26 @@ function renderDetail() {
     `w-3 h-3 rounded-full ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}`;
 
   lampGrid.innerHTML = `
-    ${lampBtn('lampu1', d.lampu1)}
-    ${lampBtn('lampu2', d.lampu2)}
-    ${lampBtn('lampu3', d.lampu3)}
+    ${lampBtn('Lampu 1','lampu1',d.lampu1)}
+    ${lampBtn('Lampu 2','lampu2',d.lampu2)}
+    ${lampBtn('Lampu 3','lampu3',d.lampu3)}
   `;
 
   kipasBtn.className =
-    `w-full p-4 rounded-xl transition font-semibold
+    `w-full p-4 rounded-xl font-semibold transition
      ${d.kipas ? 'bg-primary glow' : 'bg-primary/20'}`;
 
   kipasBtn.onclick = () =>
-    toggle(selectedDevice, 'kipas', d.kipas);
+    toggle(selectedDevice,'kipas',d.kipas);
 }
 
 /* ================= COMPONENT ================= */
-function lampBtn(lamp, state) {
+function lampBtn(label, field, state) {
   return `
-    <button onclick="toggle('${selectedDevice}','${lamp}',${state})"
+    <button onclick="toggle('${selectedDevice}','${field}',${state})"
       class="${state ? 'bg-primary glow' : 'bg-primary/20'}
       p-4 rounded-xl font-semibold transition active:scale-95">
-      💡 ${lamp}
+      💡 ${label}
     </button>
   `;
 }
