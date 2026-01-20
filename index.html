@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Kandang</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +23,6 @@ tailwind.config = {
 </script>
 
 <style>
-.glow-red { box-shadow: 0 0 20px rgba(220,38,38,.6); }
 .fade { animation: fade .4s ease; }
 @keyframes fade {
   from { opacity:0; transform:translateY(10px); }
@@ -34,6 +33,9 @@ tailwind.config = {
 }
 .card-hover:hover {
   transform: translateY(-6px) scale(1.02);
+}
+.glow {
+  box-shadow: 0 0 18px rgba(220,38,38,.6);
 }
 </style>
 </head>
@@ -58,8 +60,7 @@ tailwind.config = {
         Tetap login
       </label>
 
-      <button
-        class="w-full bg-primary hover:bg-red-700 glow-red p-3 rounded-xl font-semibold transition active:scale-95">
+      <button class="w-full bg-primary hover:bg-red-700 glow p-3 rounded-xl font-semibold transition">
         Masuk
       </button>
     </form>
@@ -72,29 +73,37 @@ tailwind.config = {
 <!-- ================= DASHBOARD ================= -->
 <section id="dashboardPage" class="hidden fade">
 
-  <!-- SIDEBAR -->
-  <aside class="
-    fixed md:static bottom-0 w-full md:w-20
-    h-16 md:h-auto bg-card
-    flex md:flex-col justify-around md:justify-start
-    items-center py-4 gap-6 z-50">
+  <main class="p-6 max-w-5xl mx-auto">
 
-    <span class="text-xl">🏠</span>
-    <span class="text-xl">🐣</span>
-    <span class="text-xl">⚙️</span>
-    <button id="logout" class="text-red-400 text-xl">⎋</button>
-  </aside>
+    <!-- ========== OVERVIEW ========== -->
+    <section id="overviewView">
+      <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
 
-  <!-- MAIN -->
-  <main class="md:ml-20 p-6 pb-24 md:pb-6">
-    <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+      <div id="overviewGrid"
+        class="grid grid-cols-2 gap-6">
+      </div>
+    </section>
 
-    <div id="deviceGrid"
-      class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-      <!-- card kandang render di JS -->
-    </div>
+    <!-- ========== DETAIL ========== -->
+    <section id="detailView" class="hidden">
+
+      <div class="flex items-center justify-between mb-6">
+        <button id="backBtn" class="text-xl text-muted">←</button>
+        <h2 id="detailTitle" class="text-2xl font-bold">Kandang</h2>
+        <span id="detailStatus" class="w-3 h-3 rounded-full"></span>
+      </div>
+
+      <div id="lampGrid" class="grid grid-cols-2 gap-4 mb-6">
+      </div>
+
+      <button id="kipasBtn"
+        class="w-full p-4 rounded-xl bg-primary/20 transition font-semibold">
+        🌀 Kipas
+      </button>
+
+    </section>
+
   </main>
-
 </section>
 
 <!-- ================= FIREBASE ================= -->
@@ -117,7 +126,7 @@ import {
   update
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* === CONFIG KAMU === */
+/* === FIREBASE CONFIG (punyamu) === */
 const firebaseConfig = {
   apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain: "switch-lamp-3c346.firebaseapp.com",
@@ -132,25 +141,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-/* ================= PAGE CONTROL ================= */
-const loginPage = document.getElementById('loginPage');
-const dashboardPage = document.getElementById('dashboardPage');
+/* ================= STATE ================= */
+let deviceCache = {};
+let selectedDevice = null;
 
-function showDashboard() {
-  loginPage.classList.add('hidden');
-  dashboardPage.classList.remove('hidden');
-}
-
-function showLogin() {
-  dashboardPage.classList.add('hidden');
-  loginPage.classList.remove('hidden');
-}
-
+/* ================= AUTH ================= */
 onAuthStateChanged(auth, user => {
   user ? showDashboard() : showLogin();
 });
 
-/* ================= LOGIN ================= */
 loginForm.onsubmit = async e => {
   e.preventDefault();
   loginError.classList.add('hidden');
@@ -174,57 +173,89 @@ loginForm.onsubmit = async e => {
   }
 };
 
-logout.onclick = () => signOut(auth);
+function showDashboard() {
+  loginPage.classList.add('hidden');
+  dashboardPage.classList.remove('hidden');
+}
 
-/* ================= REALTIME DB ================= */
+function showLogin() {
+  dashboardPage.classList.add('hidden');
+  loginPage.classList.remove('hidden');
+}
+
+/* ================= REALTIME ================= */
 const devicesRef = ref(db, 'devices');
 
 onValue(devicesRef, snap => {
-  const devices = snap.val();
-  renderDevices(devices);
+  deviceCache = snap.val();
+  renderOverview();
+  if (selectedDevice) renderDetail();
 });
 
-/* ================= RENDER ================= */
-function renderDevices(devices) {
-  deviceGrid.innerHTML = '';
+/* ================= OVERVIEW ================= */
+function renderOverview() {
+  overviewGrid.innerHTML = '';
 
-  Object.entries(devices).forEach(([id, d]) => {
-
+  Object.entries(deviceCache).forEach(([id, d]) => {
     const online =
       d.status?.online &&
       (Date.now() - d.status.last_seen < 10000);
 
-    deviceGrid.innerHTML += `
-      <div class="bg-card p-6 rounded-2xl card-hover relative">
+    overviewGrid.innerHTML += `
+      <div onclick="openDetail('${id}')"
+        class="bg-card p-6 rounded-2xl card-hover cursor-pointer relative">
 
         <span class="absolute top-4 right-4 w-3 h-3 rounded-full
           ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}">
         </span>
 
-        <h3 class="font-semibold mb-3 capitalize">${id}</h3>
-
-        <div class="grid grid-cols-3 gap-2 mb-3">
-          ${lampBtn(id,'lampu1',d.lampu1)}
-          ${lampBtn(id,'lampu2',d.lampu2)}
-          ${lampBtn(id,'lampu3',d.lampu3)}
-        </div>
-
-        <button onclick="toggle('${id}','kipas',${d.kipas})"
-          class="w-full ${d.kipas ? 'bg-primary' : 'bg-primary/20'}
-          p-2 rounded-lg transition active:scale-95">
-          🌀 Kipas
-        </button>
+        <h3 class="font-semibold capitalize">${id}</h3>
       </div>
     `;
   });
 }
 
+/* ================= DETAIL ================= */
+window.openDetail = id => {
+  selectedDevice = id;
+  overviewView.classList.add('hidden');
+  detailView.classList.remove('hidden');
+  renderDetail();
+};
+
+function renderDetail() {
+  const d = deviceCache[selectedDevice];
+  if (!d) return;
+
+  detailTitle.textContent = selectedDevice;
+
+  const online =
+    d.status?.online &&
+    (Date.now() - d.status.last_seen < 10000);
+
+  detailStatus.className =
+    `w-3 h-3 rounded-full ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}`;
+
+  lampGrid.innerHTML = `
+    ${lampBtn('lampu1', d.lampu1)}
+    ${lampBtn('lampu2', d.lampu2)}
+    ${lampBtn('lampu3', d.lampu3)}
+  `;
+
+  kipasBtn.className =
+    `w-full p-4 rounded-xl transition font-semibold
+     ${d.kipas ? 'bg-primary glow' : 'bg-primary/20'}`;
+
+  kipasBtn.onclick = () =>
+    toggle(selectedDevice, 'kipas', d.kipas);
+}
+
 /* ================= COMPONENT ================= */
-function lampBtn(id, lamp, state) {
+function lampBtn(lamp, state) {
   return `
-    <button onclick="toggle('${id}','${lamp}',${state})"
-      class="${state ? 'bg-primary' : 'bg-primary/20'}
-      p-2 rounded-lg text-sm transition active:scale-95">
+    <button onclick="toggle('${selectedDevice}','${lamp}',${state})"
+      class="${state ? 'bg-primary glow' : 'bg-primary/20'}
+      p-4 rounded-xl font-semibold transition active:scale-95">
       💡 ${lamp}
     </button>
   `;
@@ -235,6 +266,13 @@ window.toggle = (device, field, current) => {
   update(ref(db, `devices/${device}`), {
     [field]: !current
   });
+};
+
+/* ================= BACK ================= */
+backBtn.onclick = () => {
+  detailView.classList.add('hidden');
+  overviewView.classList.remove('hidden');
+  selectedDevice = null;
 };
 </script>
 
