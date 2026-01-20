@@ -7,20 +7,29 @@
 <style>
   body{font-family:Arial;background:#f6f6f6;margin:0;padding:20px}
   h1{text-align:center}
-  .kandang{background:#fff;border-radius:12px;padding:15px;margin:15px auto;max-width:900px}
-  .row{display:flex;flex-wrap:wrap;gap:10px}
-  .card{flex:1 1 200px;background:#fafafa;border-radius:10px;padding:10px;text-align:center}
-  button{padding:8px 14px;border:none;border-radius:8px;color:#fff;background:#1976d2}
+  .box{background:#fff;border-radius:12px;padding:15px;max-width:500px;margin:20px auto}
+  button{padding:10px 16px;border:none;border-radius:8px;color:#fff;background:#1976d2;margin:5px}
   button.on{background:#2e7d32}
+  .status{font-weight:bold}
 </style>
 </head>
 <body>
 
-<h1>Dashboard Kandang</h1>
-<div id="app"></div>
+<h1>Kandang 1</h1>
+
+<div class="box">
+  <p>Status ESP32: <span id="espStatus" class="status">-</span></p>
+  <p>Last seen: <span id="lastSeen">-</span></p>
+</div>
+
+<div class="box">
+  <button onclick="toggle('lampu1')" id="lampu1">Lampu 1</button>
+  <button onclick="toggle('lampu2')" id="lampu2">Lampu 2</button>
+  <button onclick="toggle('lampu3')" id="lampu3">Lampu 3</button>
+  <button onclick="toggle('kipas')"  id="kipas">Kipas</button>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <script>
@@ -31,45 +40,43 @@ const firebaseConfig = {
   projectId: "switch-lamp-3c346",
   appId: "1:375935971674:web:1f95dcf367151a9d7cc363"
 };
+
 firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const BASE = "/devices/kandang1";
 
-firebase.auth().signInAnonymously().then(start);
-
-const kandangs = ["kandang1","kandang2","kandang3","kandang4"];
-const devices  = ["lampu1","lampu2","lampu3","kipas"];
-
-function start(){
-  const app = document.getElementById("app");
-  const db  = firebase.database();
-
-  kandangs.forEach(k=>{
-    const box = document.createElement("div");
-    box.className = "kandang";
-    box.innerHTML = `<h2>${k.toUpperCase()}</h2><div class="row"></div>`;
-    const row = box.querySelector(".row");
-
-    devices.forEach(d=>{
-      const card = document.createElement("div");
-      card.className="card";
-      card.innerHTML = `<b>${d}</b><br><span>...</span><br><br><button>Toggle</button>`;
-      const span = card.querySelector("span");
-      const btn  = card.querySelector("button");
-
-      const ref = db.ref(`/devices/${k}/${d}`);
-
-      ref.on("value", snap=>{
-        const v = !!snap.val();
-        span.textContent = v ? "ON" : "OFF";
-        btn.className = v ? "on" : "";
-      });
-
-      btn.onclick = ()=> ref.get().then(s=> ref.set(!s.val()));
-      row.appendChild(card);
-    });
-
-    app.appendChild(box);
-  });
+/* ================= RELAY ================= */
+function toggle(dev){
+  const ref = db.ref(BASE + "/" + dev);
+  ref.get().then(s => ref.set(!s.val()));
 }
+
+["lampu1","lampu2","lampu3","kipas"].forEach(d=>{
+  const ref = db.ref(BASE + "/" + d);
+  const btn = document.getElementById(d);
+
+  ref.on("value", snap=>{
+    const v = snap.val();
+    btn.className = v ? "on" : "";
+  });
+});
+
+/* ================= STATUS ================= */
+db.ref(BASE + "/status").on("value", snap=>{
+  const s = snap.val();
+  if (!s || !s.last_seen) return;
+
+  const now = Date.now();
+  const diff = now - s.last_seen;
+
+  const online = diff <= 5000; // 5 detik
+  document.getElementById("espStatus").innerText =
+    online ? "ONLINE" : "OFFLINE";
+
+  document.getElementById("lastSeen").innerText =
+    new Date(s.last_seen).toLocaleString("id-ID");
+});
 </script>
+
 </body>
 </html>
