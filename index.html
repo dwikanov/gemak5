@@ -1,159 +1,241 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Dashboard Kandang</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Kandang</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0B0B0F',
+        card: '#111827',
+        primary: '#DC2626',
+        muted: '#9CA3AF'
+      }
+    }
+  }
+}
+</script>
 
 <style>
-body{
-  font-family:Arial, sans-serif;
-  background:#f4f6f8;
-  margin:0;
-  padding:20px;
+.glow-red { box-shadow: 0 0 20px rgba(220,38,38,.6); }
+.fade { animation: fade .4s ease; }
+@keyframes fade {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:none; }
 }
-h1,h2{text-align:center}
-.card{
-  background:#fff;
-  border-radius:12px;
-  padding:15px;
-  margin:10px auto;
-  max-width:500px;
-  cursor:pointer;
+.card-hover {
+  transition: all .3s ease;
 }
-.status{
-  font-weight:bold;
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.02);
 }
-.online{color:green}
-.offline{color:red}
-button{
-  padding:10px 16px;
-  border:none;
-  border-radius:8px;
-  margin:5px;
-  color:#fff;
-  background:#1976d2;
-}
-button.on{background:#2e7d32}
-.hidden{display:none}
-.center{text-align:center}
 </style>
 </head>
 
-<body>
+<body class="bg-bg text-white min-h-screen">
 
-<!-- ================= HALAMAN UTAMA ================= -->
-<div id="home">
-  <h1>Dashboard Kandang</h1>
-  <div id="kandangList"></div>
-</div>
+<!-- ================= LOGIN ================= -->
+<section id="loginPage" class="min-h-screen flex items-center justify-center fade">
 
-<!-- ================= DETAIL KANDANG ================= -->
-<div id="detail" class="hidden">
-  <h2 id="detailTitle"></h2>
-  <p class="center">
-    Status: <span id="detailStatus" class="status">-</span><br>
-    Last seen: <span id="detailLast">-</span>
-  </p>
+  <div class="w-full max-w-md bg-card p-8 rounded-3xl shadow-2xl">
+    <h1 class="text-3xl font-bold mb-6 text-center">Smart Kandang</h1>
 
-  <div class="center">
-    <button id="lampu1">Lampu 1</button>
-    <button id="lampu2">Lampu 2</button><br>
-    <button id="lampu3">Lampu 3</button>
-    <button id="kipas">Kipas</button>
+    <form id="loginForm" class="space-y-4">
+      <input id="email" type="email" placeholder="Email"
+        class="w-full p-3 rounded-xl bg-bg border border-white/10 focus:ring-2 focus:ring-primary outline-none">
+
+      <input id="password" type="password" placeholder="Password"
+        class="w-full p-3 rounded-xl bg-bg border border-white/10 focus:ring-2 focus:ring-primary outline-none">
+
+      <label class="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" id="remember" class="accent-primary">
+        Tetap login
+      </label>
+
+      <button
+        class="w-full bg-primary hover:bg-red-700 glow-red p-3 rounded-xl font-semibold transition active:scale-95">
+        Masuk
+      </button>
+    </form>
+
+    <p id="loginError" class="text-red-400 text-sm mt-4 hidden"></p>
   </div>
 
-  <div class="center">
-    <br>
-    <button onclick="backHome()">← Kembali</button>
-  </div>
-</div>
+</section>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<!-- ================= DASHBOARD ================= -->
+<section id="dashboardPage" class="hidden fade">
 
-<script>
-/* ================= FIREBASE ================= */
+  <!-- SIDEBAR -->
+  <aside class="
+    fixed md:static bottom-0 w-full md:w-20
+    h-16 md:h-auto bg-card
+    flex md:flex-col justify-around md:justify-start
+    items-center py-4 gap-6 z-50">
+
+    <span class="text-xl">🏠</span>
+    <span class="text-xl">🐣</span>
+    <span class="text-xl">⚙️</span>
+    <button id="logout" class="text-red-400 text-xl">⎋</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="md:ml-20 p-6 pb-24 md:pb-6">
+    <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+
+    <div id="deviceGrid"
+      class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <!-- card kandang render di JS -->
+    </div>
+  </main>
+
+</section>
+
+<!-- ================= FIREBASE ================= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  update
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+/* === CONFIG KAMU === */
 const firebaseConfig = {
   apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain: "switch-lamp-3c346.firebaseapp.com",
   databaseURL: "https://switch-lamp-3c346-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "switch-lamp-3c346",
+  storageBucket: "switch-lamp-3c346.firebasestorage.app",
+  messagingSenderId: "375935971674",
   appId: "1:375935971674:web:1f95dcf367151a9d7cc363"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
-/* ================= DATA ================= */
-const kandangs = ["kandang1","kandang2","kandang3","kandang4"];
-let currentKandang = null;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-/* ================= HALAMAN UTAMA ================= */
-const list = document.getElementById("kandangList");
+/* ================= PAGE CONTROL ================= */
+const loginPage = document.getElementById('loginPage');
+const dashboardPage = document.getElementById('dashboardPage');
 
-kandangs.forEach(k=>{
-  const card = document.createElement("div");
-  card.className="card";
-  card.innerHTML = `<h3>${k.toUpperCase()}</h3>
-    Status: <span class="status">-</span>`;
-  const statusEl = card.querySelector(".status");
+function showDashboard() {
+  loginPage.classList.add('hidden');
+  dashboardPage.classList.remove('hidden');
+}
 
-  db.ref(`/devices/${k}/status`).on("value", snap=>{
-    const s = snap.val();
-    if(!s || !s.last_seen) return;
+function showLogin() {
+  dashboardPage.classList.add('hidden');
+  loginPage.classList.remove('hidden');
+}
 
-    const offline = (Date.now() - s.last_seen) > 5000;
-    statusEl.innerText = offline ? "OFFLINE" : "ONLINE";
-    statusEl.className = "status " + (offline ? "offline" : "online");
-  });
-
-  card.onclick = ()=> openDetail(k);
-  list.appendChild(card);
+onAuthStateChanged(auth, user => {
+  user ? showDashboard() : showLogin();
 });
 
-/* ================= DETAIL ================= */
-function openDetail(k){
-  currentKandang = k;
-  document.getElementById("home").classList.add("hidden");
-  document.getElementById("detail").classList.remove("hidden");
+/* ================= LOGIN ================= */
+loginForm.onsubmit = async e => {
+  e.preventDefault();
+  loginError.classList.add('hidden');
 
-  document.getElementById("detailTitle").innerText = k.toUpperCase();
+  try {
+    await setPersistence(
+      auth,
+      remember.checked
+        ? browserLocalPersistence
+        : browserSessionPersistence
+    );
 
-  const base = `/devices/${k}`;
+    await signInWithEmailAndPassword(
+      auth,
+      email.value,
+      password.value
+    );
+  } catch (err) {
+    loginError.textContent = err.message;
+    loginError.classList.remove('hidden');
+  }
+};
 
-  // status
-  db.ref(base + "/status").on("value", snap=>{
-    const s = snap.val();
-    if(!s || !s.last_seen) return;
+logout.onclick = () => signOut(auth);
 
-    const offline = (Date.now() - s.last_seen) > 5000;
-    document.getElementById("detailStatus").innerText =
-      offline ? "OFFLINE" : "ONLINE";
-    document.getElementById("detailStatus").className =
-      "status " + (offline ? "offline" : "online");
+/* ================= REALTIME DB ================= */
+const devicesRef = ref(db, 'devices');
 
-    document.getElementById("detailLast").innerText =
-      new Date(s.last_seen).toLocaleString("id-ID");
-  });
+onValue(devicesRef, snap => {
+  const devices = snap.val();
+  renderDevices(devices);
+});
 
-  ["lampu1","lampu2","lampu3","kipas"].forEach(d=>{
-    const btn = document.getElementById(d);
-    const ref = db.ref(base + "/" + d);
+/* ================= RENDER ================= */
+function renderDevices(devices) {
+  deviceGrid.innerHTML = '';
 
-    ref.on("value", snap=>{
-      btn.className = snap.val() ? "on" : "";
-    });
+  Object.entries(devices).forEach(([id, d]) => {
 
-    btn.onclick = ()=> {
-      ref.get().then(s=> ref.set(!s.val()));
-    };
+    const online =
+      d.status?.online &&
+      (Date.now() - d.status.last_seen < 10000);
+
+    deviceGrid.innerHTML += `
+      <div class="bg-card p-6 rounded-2xl card-hover relative">
+
+        <span class="absolute top-4 right-4 w-3 h-3 rounded-full
+          ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}">
+        </span>
+
+        <h3 class="font-semibold mb-3 capitalize">${id}</h3>
+
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          ${lampBtn(id,'lampu1',d.lampu1)}
+          ${lampBtn(id,'lampu2',d.lampu2)}
+          ${lampBtn(id,'lampu3',d.lampu3)}
+        </div>
+
+        <button onclick="toggle('${id}','kipas',${d.kipas})"
+          class="w-full ${d.kipas ? 'bg-primary' : 'bg-primary/20'}
+          p-2 rounded-lg transition active:scale-95">
+          🌀 Kipas
+        </button>
+      </div>
+    `;
   });
 }
 
-function backHome(){
-  document.getElementById("detail").classList.add("hidden");
-  document.getElementById("home").classList.remove("hidden");
+/* ================= COMPONENT ================= */
+function lampBtn(id, lamp, state) {
+  return `
+    <button onclick="toggle('${id}','${lamp}',${state})"
+      class="${state ? 'bg-primary' : 'bg-primary/20'}
+      p-2 rounded-lg text-sm transition active:scale-95">
+      💡 ${lamp}
+    </button>
+  `;
 }
+
+/* ================= TOGGLE ================= */
+window.toggle = (device, field, current) => {
+  update(ref(db, `devices/${device}`), {
+    [field]: !current
+  });
+};
 </script>
 
 </body>
