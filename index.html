@@ -6,7 +6,6 @@
 <title>Smart Kandang</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script>
 tailwind.config = {
   theme: {
@@ -23,152 +22,170 @@ tailwind.config = {
 </script>
 
 <style>
-body {
-  background:
-    radial-gradient(circle at top, rgba(220,38,38,.08), transparent 40%),
-    #0B0B0F;
-}
-.fade { animation: fade .4s ease; }
-@keyframes fade {
-  from { opacity:0; transform:translateY(10px); }
-  to { opacity:1; transform:none; }
-}
-.card-hover { transition: all .3s ease; }
-.card-hover:hover { transform: translateY(-6px) scale(1.02); }
-.glow { box-shadow: 0 0 18px rgba(220,38,38,.6); }
+.fade{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.card-hover{transition:.25s}
+.card-hover:hover{transform:translateY(-4px)}
+.glow{box-shadow:0 0 16px rgba(220,38,38,.6)}
 </style>
 </head>
 
-<body class="text-white min-h-screen">
+<body class="bg-bg text-white min-h-screen">
 
 <!-- ================= LOGIN ================= -->
 <section id="loginPage" class="min-h-screen flex items-center justify-center fade">
-
-  <div class="w-full max-w-md bg-card p-8 rounded-3xl shadow-2xl border border-white/10">
-    <h1 class="text-3xl font-bold mb-6 text-center">Smart Kandang</h1>
+  <div class="w-full max-w-md bg-card p-8 rounded-3xl shadow-2xl">
+    <h1 class="text-3xl font-bold text-center mb-6">Smart Kandang</h1>
 
     <form id="loginForm" class="space-y-4">
       <input id="email" type="email" placeholder="Email"
-        class="w-full p-3 rounded-xl bg-bg border border-white/10 focus:ring-2 focus:ring-primary outline-none">
-
+        class="w-full p-3 rounded-xl bg-bg border border-white/10">
       <input id="password" type="password" placeholder="Password"
-        class="w-full p-3 rounded-xl bg-bg border border-white/10 focus:ring-2 focus:ring-primary outline-none">
-
+        class="w-full p-3 rounded-xl bg-bg border border-white/10">
       <label class="flex items-center gap-2 text-sm text-muted">
-        <input type="checkbox" id="remember" class="accent-primary">
-        Tetap Login
+        <input id="remember" type="checkbox" class="accent-primary">
+        Tetap login
       </label>
-
-      <button
-        class="w-full bg-primary hover:bg-red-700 glow p-3 rounded-xl font-semibold transition">
+      <button class="w-full bg-primary p-3 rounded-xl font-semibold glow">
         Masuk
       </button>
     </form>
-
-    <p id="loginError" class="text-red-400 text-sm mt-4 hidden"></p>
+    <p id="loginError" class="hidden text-red-400 mt-4 text-sm"></p>
   </div>
-
 </section>
 
 <!-- ================= DASHBOARD ================= -->
 <section id="dashboardPage" class="hidden fade">
 
-  <main class="
-  min-h-screen
-  flex
-  items-center
-  justify-center
-  p-4
-">
+<main class="p-4 md:p-8 flex justify-center">
+<div class="w-full max-w-5xl bg-card/80 backdrop-blur border border-white/10 rounded-3xl shadow-2xl p-6 md:p-8">
 
-    <!-- APP CONTAINER -->
-<div class="
-  w-full max-w-5xl
-  bg-card/80 backdrop-blur
-  rounded-3xl
-  shadow-2xl
-  border border-white/10
-  p-6 md:p-8
-  max-h-[90vh]
-  overflow-y-auto
-">
+<!-- HEADER -->
+<div class="flex justify-between items-center mb-8">
+  <div>
+    <h2 class="text-2xl md:text-3xl font-bold">Dashboard</h2>
+    <p class="text-sm text-muted">Smart Kandang Control Panel</p>
+  </div>
+  <button id="logout" class="text-red-400">Logout</button>
+</div>
 
-      <!-- HEADER -->
-      <div class="mb-8">
-        <h2 class="text-2xl md:text-3xl font-bold">Dashboard</h2>
-        <p class="text-sm text-muted">Smart Kandang Control Panel</p>
-      </div>
+<!-- ========== OVERVIEW ========= -->
+<section id="overviewView">
+  <div id="overviewGrid" class="grid grid-cols-2 gap-4 md:gap-6"></div>
+</section>
 
-      <!-- ================= OVERVIEW ================= -->
-      <section id="overviewView">
-        <div id="overviewGrid"
-          class="grid grid-cols-2 gap-4 md:gap-6">
-        </div>
-      </section>
+<!-- ========== DETAIL ========= -->
+<section id="detailView" class="hidden fade mt-6">
+<div class="bg-bg/60 border border-white/10 rounded-2xl p-6">
 
-      <!-- ================= DETAIL ================= -->
-      <section id="detailView" class="hidden fade">
+<div class="flex items-center justify-between mb-6">
+  <button id="backBtn" class="text-muted text-xl">←</button>
+  <h2 id="detailTitle" class="text-xl font-bold">Kandang</h2>
 
-        <div class="
-          bg-bg/60
-          border border-white/10
-          rounded-2xl
-          p-6
-        ">
+  <button id="wifiBtn"
+    class="px-3 py-1 text-sm rounded-lg bg-bg/60 border border-white/10">
+    <span id="wifiName">Offline</span>
+  </button>
 
-          <div class="flex items-center justify-between mb-6">
-            <button id="backBtn"
-              class="text-muted hover:text-white transition">
-              ← Kembali
-            </button>
+  <span id="detailStatus" class="w-3 h-3 rounded-full"></span>
+</div>
 
-            <h3 id="detailTitle"
-              class="text-xl md:text-2xl font-bold">
-              Kandang
-            </h3>
+<div id="lampGrid" class="grid grid-cols-2 gap-4 mb-6"></div>
 
-            <span id="detailStatus"
-              class="w-3 h-3 rounded-full">
-            </span>
-          </div>
+<button id="kipasBtn"
+  class="w-full p-4 rounded-xl bg-primary/20 font-semibold">
+  🌀 Kipas
+</button>
 
-          <!-- LAMPU -->
-          <div id="lampGrid"
-            class="grid grid-cols-2 gap-4 mb-6">
-          </div>
+</div>
+</section>
 
-          <!-- KIPAS -->
-          <button id="kipasBtn"
-            class="w-full p-4 rounded-xl font-semibold transition">
-            🌀 Kipas
-          </button>
+<!-- ========== WIFI STATUS ========= -->
+<section id="wifiStatusView" class="hidden fade mt-6">
+<div class="bg-bg/60 border border-white/10 rounded-2xl p-6">
 
-        </div>
-      </section>
+<div class="flex items-center justify-between mb-6">
+  <button onclick="openDetail(selectedDevice)">←</button>
+  <h2 class="text-xl font-bold">Status <span id="wifiKandang"></span></h2>
+</div>
 
-    </div>
-  </main>
+<p class="text-muted">Nama WiFi</p>
+<p id="currentSSID" class="font-semibold mb-4">-</p>
+
+<p class="text-muted">Sinyal</p>
+<p id="currentRSSI" class="mb-6">-</p>
+
+<button onclick="startWifiScan()"
+  class="w-full p-3 rounded-xl bg-primary">
+  Ganti WiFi
+</button>
+
+</div>
+</section>
+
+<!-- ========== WIFI SCAN ========= -->
+<section id="wifiScanView" class="hidden fade mt-6">
+<div class="bg-bg/60 border border-white/10 rounded-2xl p-6">
+
+<div class="flex items-center justify-between mb-6">
+  <button onclick="openWifiStatus()">←</button>
+  <h2 class="text-xl font-bold">Ganti WiFi</h2>
+</div>
+
+<div id="wifiList" class="space-y-3"></div>
+
+<button onclick="startWifiScan()"
+  class="mt-6 w-full p-3 rounded-xl bg-bg/60 border border-white/10">
+  Refresh
+</button>
+
+</div>
+</section>
+
+<!-- ========== WIFI PASSWORD ========= -->
+<section id="wifiPasswordView" class="hidden fade mt-6">
+<div class="bg-bg/60 border border-white/10 rounded-2xl p-6">
+
+<div class="flex items-center justify-between mb-6">
+  <button onclick="openWifiScan()">←</button>
+  <h2 id="selectedSSIDTitle" class="text-xl font-bold"></h2>
+</div>
+
+<input id="wifiPassword" type="password"
+  placeholder="Password WiFi"
+  class="w-full p-3 rounded-xl bg-bg border border-white/10">
+
+<button onclick="connectWifi()"
+  class="mt-6 w-full p-3 rounded-xl bg-primary">
+  Sambungkan
+</button>
+
+</div>
+</section>
+
+<!-- ========== WIFI LOADING ========= -->
+<section id="wifiLoadingView" class="hidden fade mt-6 text-center">
+<div class="bg-bg/60 border border-white/10 rounded-2xl p-10">
+  <p id="wifiLoadingText" class="text-xl">⏳ Harap Tunggu</p>
+</div>
+</section>
+
+</div>
+</main>
 </section>
 
 <!-- ================= FIREBASE ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged
+  getAuth, signInWithEmailAndPassword, setPersistence,
+  browserLocalPersistence, browserSessionPersistence,
+  onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  onValue,
-  update
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, update }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* === CONFIG === */
+/* CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain: "switch-lamp-3c346.firebaseapp.com",
@@ -183,142 +200,163 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-/* ================= STATE ================= */
 let deviceCache = {};
 let selectedDevice = null;
+let selectedSSID = '';
 
-/* ================= AUTH ================= */
-onAuthStateChanged(auth, user => {
-  user ? showDashboard() : showLogin();
-});
+/* AUTH */
+onAuthStateChanged(auth, u => u ? showDashboard() : showLogin());
 
 loginForm.onsubmit = async e => {
   e.preventDefault();
-  loginError.classList.add('hidden');
-
   try {
-    await setPersistence(
-      auth,
-      remember.checked
-        ? browserLocalPersistence
-        : browserSessionPersistence
-    );
-
-    await signInWithEmailAndPassword(
-      auth,
-      email.value,
-      password.value
-    );
-  } catch (err) {
-    loginError.textContent = err.message;
+    await setPersistence(auth,
+      remember.checked ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithEmailAndPassword(auth, email.value, password.value);
+  } catch (e) {
+    loginError.textContent = e.message;
     loginError.classList.remove('hidden');
   }
 };
 
-function showDashboard() {
-  loginPage.classList.add('hidden');
-  dashboardPage.classList.remove('hidden');
-}
+logout.onclick = () => signOut(auth);
 
-function showLogin() {
-  dashboardPage.classList.add('hidden');
-  loginPage.classList.remove('hidden');
-}
+function showDashboard(){loginPage.classList.add('hidden');dashboardPage.classList.remove('hidden')}
+function showLogin(){dashboardPage.classList.add('hidden');loginPage.classList.remove('hidden')}
 
-/* ================= REALTIME ================= */
-onValue(ref(db, 'devices'), snap => {
+/* REALTIME */
+onValue(ref(db,'devices'), snap => {
   deviceCache = snap.val() || {};
   renderOverview();
-  if (selectedDevice) renderDetail();
+  if (selectedDevice) {
+    renderDetail();
+    handleWifiStatus();
+  }
 });
 
-/* ================= HELPERS ================= */
-function formatKandang(id) {
-  return id.replace('kandang', 'Kandang ');
-}
-
-/* ================= OVERVIEW ================= */
-function renderOverview() {
-  overviewGrid.innerHTML = '';
-
-  Object.entries(deviceCache).forEach(([id, d]) => {
-    const online =
-      d.status?.online &&
-      (Date.now() - d.status.last_seen < 10000);
-
-    overviewGrid.innerHTML += `
+/* OVERVIEW */
+function renderOverview(){
+  overviewGrid.innerHTML='';
+  Object.entries(deviceCache).forEach(([id,d])=>{
+    const on = d.status?.online && Date.now()-d.status.last_seen<10000;
+    overviewGrid.innerHTML+=`
       <div onclick="openDetail('${id}')"
-        class="bg-bg/60 border border-white/10
-        p-6 rounded-2xl card-hover cursor-pointer relative">
-
+        class="bg-bg/60 border border-white/10 p-6 rounded-2xl card-hover cursor-pointer relative">
         <span class="absolute top-4 right-4 w-3 h-3 rounded-full
-          ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}"></span>
-
-        <h3 class="text-lg font-semibold">${formatKandang(id)}</h3>
-      </div>
-    `;
+          ${on?'bg-green-400 animate-pulse':'bg-red-500'}"></span>
+        <h3 class="font-semibold capitalize">${id}</h3>
+      </div>`;
   });
 }
 
-/* ================= DETAIL ================= */
-window.openDetail = id => {
-  selectedDevice = id;
+/* DETAIL */
+window.openDetail=id=>{
+  selectedDevice=id;
   overviewView.classList.add('hidden');
+  hideWifiViews();
   detailView.classList.remove('hidden');
   renderDetail();
 };
 
-function renderDetail() {
-  const d = deviceCache[selectedDevice];
-  if (!d) return;
+function renderDetail(){
+  const d=deviceCache[selectedDevice];
+  if(!d) return;
 
-  detailTitle.textContent = formatKandang(selectedDevice);
+  detailTitle.textContent=selectedDevice;
+  wifiName.textContent=d.wifi?.current?.ssid||'Offline';
 
-  const online =
-    d.status?.online &&
-    (Date.now() - d.status.last_seen < 10000);
+  const on=d.status?.online && Date.now()-d.status.last_seen<10000;
+  detailStatus.className=`w-3 h-3 rounded-full ${on?'bg-green-400':'bg-red-500'}`;
 
-  detailStatus.className =
-    `w-3 h-3 rounded-full ${online ? 'bg-green-400 animate-pulse' : 'bg-red-500'}`;
+  lampGrid.innerHTML=['lampu1','lampu2','lampu3']
+    .map(l=>lampBtn(l,d[l])).join('');
 
-  lampGrid.innerHTML = `
-    ${lampBtn('Lampu 1','lampu1',d.lampu1)}
-    ${lampBtn('Lampu 2','lampu2',d.lampu2)}
-    ${lampBtn('Lampu 3','lampu3',d.lampu3)}
-  `;
-
-  kipasBtn.className =
-    `w-full p-4 rounded-xl font-semibold transition
-     ${d.kipas ? 'bg-primary glow' : 'bg-primary/20'}`;
-
-  kipasBtn.onclick = () =>
-    toggle(selectedDevice,'kipas',d.kipas);
+  kipasBtn.className=
+    `w-full p-4 rounded-xl ${d.kipas?'bg-primary glow':'bg-primary/20'}`;
+  kipasBtn.onclick=()=>toggle(selectedDevice,'kipas',d.kipas);
 }
 
-/* ================= COMPONENT ================= */
-function lampBtn(label, field, state) {
-  return `
-    <button onclick="toggle('${selectedDevice}','${field}',${state})"
-      class="${state ? 'bg-primary glow' : 'bg-primary/20'}
-      p-4 rounded-xl font-semibold transition active:scale-95">
-      💡 ${label}
-    </button>
-  `;
+function lampBtn(l,s){
+  return `<button onclick="toggle('${selectedDevice}','${l}',${s})"
+    class="${s?'bg-primary glow':'bg-primary/20'}
+    p-4 rounded-xl font-semibold">${l}</button>`;
 }
 
-/* ================= TOGGLE ================= */
-window.toggle = (device, field, current) => {
-  update(ref(db, `devices/${device}`), {
-    [field]: !current
-  });
-};
+window.toggle=(dev,f,c)=>update(ref(db,`devices/${dev}`),{[f]:!c});
 
-/* ================= BACK ================= */
-backBtn.onclick = () => {
+/* BACK */
+backBtn.onclick=()=>{
   detailView.classList.add('hidden');
   overviewView.classList.remove('hidden');
-  selectedDevice = null;
+  selectedDevice=null;
 };
+
+/* WIFI */
+wifiBtn.onclick=openWifiStatus;
+
+function openWifiStatus(){
+  detailView.classList.add('hidden');
+  wifiStatusView.classList.remove('hidden');
+  const w=deviceCache[selectedDevice]?.wifi;
+  wifiKandang.textContent=selectedDevice;
+  currentSSID.textContent=w?.current?.ssid||'Offline';
+  currentRSSI.textContent=w?.current?.rssi||'-';
+}
+
+function startWifiScan(){
+  update(ref(db,`devices/${selectedDevice}/wifi/request`),{cmd:'scan'});
+  wifiStatusView.classList.add('hidden');
+  wifiScanView.classList.remove('hidden');
+}
+
+function openWifiScan(){
+  wifiPasswordView.classList.add('hidden');
+  wifiScanView.classList.remove('hidden');
+}
+
+function renderWifiList(){
+  const list=deviceCache[selectedDevice]?.wifi?.scan_result||{};
+  const arr=Object.values(list).sort((a,b)=>b.rssi-a.rssi);
+  wifiList.innerHTML=arr.map(w=>`
+    <button onclick="selectWifi('${w.ssid}')"
+      class="w-full flex justify-between p-3 bg-bg/60 rounded-xl">
+      <span>${w.ssid}</span><span>${w.rssi}</span>
+    </button>`).join('');
+}
+
+window.selectWifi=ssid=>{
+  selectedSSID=ssid;
+  selectedSSIDTitle.textContent=ssid;
+  wifiScanView.classList.add('hidden');
+  wifiPasswordView.classList.remove('hidden');
+};
+
+function connectWifi(){
+  update(ref(db,`devices/${selectedDevice}/wifi/request`),{
+    cmd:'connect',ssid:selectedSSID,password:wifiPassword.value
+  });
+  wifiPasswordView.classList.add('hidden');
+  wifiLoadingView.classList.remove('hidden');
+}
+
+function handleWifiStatus(){
+  const st=deviceCache[selectedDevice]?.wifi?.status?.state;
+  if(st==='success'){
+    wifiLoadingText.textContent='✅ Berhasil';
+    setTimeout(()=>openDetail(selectedDevice),1500);
+  }
+  if(st==='failed'){
+    wifiLoadingText.textContent='❌ Gagal';
+    setTimeout(openWifiStatus,1500);
+  }
+}
+
+function hideWifiViews(){
+  wifiStatusView.classList.add('hidden');
+  wifiScanView.classList.add('hidden');
+  wifiPasswordView.classList.add('hidden');
+  wifiLoadingView.classList.add('hidden');
+}
 </script>
 
 </body>
