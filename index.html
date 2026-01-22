@@ -4,30 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Kandang</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
   theme: {
     extend: {
       colors: {
-        bg:'#0B0B0F', card:'#111827', primary:'#DC2626', muted:'#9CA3AF'
+        bg:'#0B0B0F',
+        card:'#111827',
+        primary:'#DC2626',
+        muted:'#9CA3AF'
       }
     }
   }
 }
 </script>
+
+<style>
+/* ===== VIEW ANIMATION ===== */
+.view {
+  opacity: 0;
+  transform: translateY(12px) scale(.98);
+  pointer-events: none;
+  transition: all .35s ease;
+}
+.view-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.hidden { display: none; }
+
+/* ===== UI EFFECT ===== */
+.card-hover { transition: .25s; }
+.card-hover:hover { transform: translateY(-6px); }
+.glow { box-shadow: 0 0 18px rgba(220,38,38,.55); }
+</style>
 </head>
 
 <body class="bg-bg text-white min-h-screen">
 
 <!-- ================= LOGIN ================= -->
 <section id="loginPage" class="min-h-screen flex items-center justify-center">
-  <div class="bg-card p-8 rounded-3xl w-full max-w-md">
+  <div class="bg-card p-8 rounded-3xl w-full max-w-md shadow-2xl">
     <h1 class="text-3xl font-bold mb-6 text-center">Smart Kandang</h1>
     <form id="loginForm" class="space-y-4">
-      <input id="email" class="w-full p-3 rounded bg-bg" placeholder="Email">
-      <input id="password" type="password" class="w-full p-3 rounded bg-bg" placeholder="Password">
-      <button class="w-full bg-primary p-3 rounded font-semibold">Masuk</button>
+      <input id="email" class="w-full p-3 rounded bg-bg border border-white/10" placeholder="Email">
+      <input id="password" type="password" class="w-full p-3 rounded bg-bg border border-white/10" placeholder="Password">
+      <button class="w-full bg-primary p-3 rounded-xl font-semibold glow">Masuk</button>
     </form>
   </div>
 </section>
@@ -35,61 +60,67 @@ tailwind.config = {
 <!-- ================= DASHBOARD ================= -->
 <section id="dashboardPage" class="hidden">
 <main class="p-4 md:p-8 flex justify-center">
-<div class="w-full max-w-5xl bg-card/80 border border-white/10 rounded-3xl p-6">
+<div class="w-full max-w-5xl bg-card/80 backdrop-blur border border-white/10 rounded-3xl p-6 shadow-2xl">
 
 <!-- HEADER -->
-<h2 class="text-2xl font-bold mb-6 cursor-pointer" onclick="show('overview')">
+<h2 class="text-2xl font-bold mb-6 cursor-pointer hover:text-primary transition"
+  onclick="show('overview')">
 Dashboard
 </h2>
 
 <!-- ===== OVERVIEW ===== -->
-<section id="overviewView">
+<section id="overviewView" class="view view-active">
   <div id="overviewGrid" class="grid grid-cols-2 gap-4"></div>
 </section>
 
 <!-- ===== DETAIL ===== -->
-<section id="detailView" class="hidden">
+<section id="detailView" class="view hidden">
   <div class="flex items-center justify-between mb-4">
-    <button onclick="show('overview')">←</button>
+    <button onclick="show('overview')" class="text-xl">←</button>
     <h3 id="detailTitle" class="font-bold"></h3>
-    <button onclick="show('wifiStatus')" id="wifiName">WiFi</button>
+    <button id="wifiName" onclick="show('wifiStatus')"
+      class="text-sm px-3 py-1 rounded bg-bg/60 border border-white/10">
+      WiFi
+    </button>
   </div>
 
   <div id="lampGrid" class="grid grid-cols-2 gap-3 mb-4"></div>
 
-  <button id="kipasBtn" class="w-full p-3 rounded bg-primary/20">
+  <button id="kipasBtn"
+    class="w-full p-3 rounded-xl bg-primary/20 transition active:scale-95">
     🌀 Kipas
   </button>
 </section>
 
 <!-- ===== WIFI STATUS ===== -->
-<section id="wifiStatusView" class="hidden">
-  <button onclick="show('detail')">←</button>
-  <p class="mt-4">Nama WiFi:</p>
+<section id="wifiStatusView" class="view hidden">
+  <button onclick="show('detail')" class="text-xl">←</button>
+  <p class="mt-4 text-muted">Nama WiFi</p>
   <p id="currentSSID" class="font-bold mb-4">-</p>
-  <button onclick="startScan()" class="bg-primary p-3 rounded w-full">
+  <button onclick="startScan()" class="w-full bg-primary p-3 rounded-xl glow">
     Ganti WiFi
   </button>
 </section>
 
 <!-- ===== WIFI SCAN ===== -->
-<section id="wifiScanView" class="hidden">
-  <button onclick="show('wifiStatus')">←</button>
+<section id="wifiScanView" class="view hidden">
+  <button onclick="show('wifiStatus')" class="text-xl">←</button>
   <div id="wifiList" class="mt-4 space-y-2"></div>
 </section>
 
 <!-- ===== WIFI PASSWORD ===== -->
-<section id="wifiPasswordView" class="hidden">
-  <button onclick="show('wifiScan')">←</button>
+<section id="wifiPasswordView" class="view hidden">
+  <button onclick="show('wifiScan')" class="text-xl">←</button>
   <h3 id="ssidTitle" class="font-bold mb-3"></h3>
-  <input id="wifiPassword" class="w-full p-3 rounded bg-bg" placeholder="Password">
-  <button onclick="connectWifi()" class="w-full bg-primary p-3 rounded mt-4">
+  <input id="wifiPassword" class="w-full p-3 rounded bg-bg border border-white/10"
+    placeholder="Password WiFi">
+  <button onclick="connectWifi()" class="w-full bg-primary p-3 rounded-xl mt-4 glow">
     Sambungkan
   </button>
 </section>
 
 <!-- ===== WIFI LOADING ===== -->
-<section id="wifiLoadingView" class="hidden text-center">
+<section id="wifiLoadingView" class="view hidden text-center">
   <p id="wifiLoadingText" class="text-xl">⏳ Harap tunggu</p>
 </section>
 
@@ -105,89 +136,113 @@ from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getDatabase, ref, onValue, update }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* ===== FIREBASE ===== */
 const app = initializeApp({
   apiKey:"AIzaSyDprQw_5Gd-LksX4hCWaZkBhdiSPw8qqm0",
   authDomain:"switch-lamp-3c346.firebaseapp.com",
   databaseURL:"https://switch-lamp-3c346-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
-
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-let currentView = 'overview';
+/* ===== STATE ===== */
 let selectedDevice = null;
 let selectedSSID = '';
 let cache = {};
 
+/* ===== VIEW CONTROLLER ===== */
+const views = {
+  overview: overviewView,
+  detail: detailView,
+  wifiStatus: wifiStatusView,
+  wifiScan: wifiScanView,
+  wifiPassword: wifiPasswordView,
+  wifiLoading: wifiLoadingView
+};
+
 window.show = view => {
-  currentView = view;
-  overviewView.classList.toggle('hidden', view!=='overview');
-  detailView.classList.toggle('hidden', view!=='detail');
-  wifiStatusView.classList.toggle('hidden', view!=='wifiStatus');
-  wifiScanView.classList.toggle('hidden', view!=='wifiScan');
-  wifiPasswordView.classList.toggle('hidden', view!=='wifiPassword');
-  wifiLoadingView.classList.toggle('hidden', view!=='wifiLoading');
+  Object.values(views).forEach(v => {
+    v.classList.add('hidden');
+    v.classList.remove('view-active');
+  });
+  const active = views[view];
+  active.classList.remove('hidden');
+  requestAnimationFrame(() => active.classList.add('view-active'));
 };
 
-onAuthStateChanged(auth,u=>{
-  loginPage.classList.toggle('hidden',!!u);
-  dashboardPage.classList.toggle('hidden',!u);
+/* ===== AUTH ===== */
+onAuthStateChanged(auth, u => {
+  loginPage.classList.toggle('hidden', !!u);
+  dashboardPage.classList.toggle('hidden', !u);
 });
-
-loginForm.onsubmit=e=>{
+loginForm.onsubmit = e => {
   e.preventDefault();
-  signInWithEmailAndPassword(auth,email.value,password.value);
+  signInWithEmailAndPassword(auth, email.value, password.value);
 };
 
-onValue(ref(db,'devices'),s=>{
-  cache=s.val()||{};
+/* ===== REALTIME ===== */
+onValue(ref(db,'devices'), s => {
+  cache = s.val() || {};
   renderOverview();
-  if(selectedDevice) renderDetail();
+  if (selectedDevice) renderDetail();
 });
 
+/* ===== OVERVIEW ===== */
 function renderOverview(){
   overviewGrid.innerHTML='';
   Object.keys(cache).forEach(id=>{
     overviewGrid.innerHTML+=`
       <div onclick="openDetail('${id}')"
-      class="p-4 bg-bg/60 rounded cursor-pointer">${id}</div>`;
+        class="bg-bg/60 border border-white/10 p-4 rounded-2xl card-hover cursor-pointer">
+        ${id}
+      </div>`;
   });
 }
 
-window.openDetail=id=>{
-  selectedDevice=id;
+/* ===== DETAIL ===== */
+window.openDetail = id => {
+  selectedDevice = id;
   renderDetail();
   show('detail');
 };
 
 function renderDetail(){
-  const d=cache[selectedDevice];
-  detailTitle.textContent=selectedDevice;
-  wifiName.textContent=d.wifi?.current?.ssid||'Offline';
+  const d = cache[selectedDevice];
+  detailTitle.textContent = selectedDevice;
+  wifiName.textContent = d.wifi?.current?.ssid || 'Offline';
 
-  lampGrid.innerHTML=['lampu1','lampu2','lampu3']
-    .map(l=>`<button onclick="toggle('${l}',${d[l]})"
-    class="p-3 rounded ${d[l]?'bg-primary':'bg-primary/20'}">${l}</button>`).join('');
+  lampGrid.innerHTML = ['lampu1','lampu2','lampu3']
+    .map(l=>`
+      <button onclick="toggle('${l}',${d[l]})"
+        class="p-3 rounded-xl font-semibold
+        ${d[l]?'bg-primary glow':'bg-primary/20'}">
+        ${l}
+      </button>`).join('');
 
-  kipasBtn.onclick=()=>toggle('kipas',d.kipas);
+  kipasBtn.className =
+    `w-full p-3 rounded-xl ${d.kipas?'bg-primary glow':'bg-primary/20'}`;
+  kipasBtn.onclick = () => toggle('kipas', d.kipas);
 }
 
-window.toggle=(f,v)=>update(ref(db,`devices/${selectedDevice}`),{[f]:!v});
+/* ===== TOGGLE ===== */
+window.toggle = (f,v) =>
+  update(ref(db,`devices/${selectedDevice}`),{[f]:!v});
 
-window.startScan=()=>{
+/* ===== WIFI ===== */
+window.startScan = () => {
   update(ref(db,`devices/${selectedDevice}/wifi/request`),{cmd:'scan'});
   show('wifiScan');
 };
 
-window.selectWifi=ssid=>{
-  selectedSSID=ssid;
-  ssidTitle.textContent=ssid;
+window.selectWifi = ssid => {
+  selectedSSID = ssid;
+  ssidTitle.textContent = ssid;
   show('wifiPassword');
 };
 
-window.connectWifi=()=>{
+window.connectWifi = () => {
   update(ref(db,`devices/${selectedDevice}/wifi/request`),
-  {cmd:'connect',ssid:selectedSSID,password:wifiPassword.value});
+    {cmd:'connect',ssid:selectedSSID,password:wifiPassword.value});
   show('wifiLoading');
 };
 </script>
